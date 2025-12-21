@@ -1,0 +1,4182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nano Banana Pro | Future Lab Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      zoom: 1.1; 
+      --bg-color: #f0f2f5;
+      --bg-pattern: #e2e8f0;
+      --panel-bg: rgba(255, 255, 255, 0.9);
+      --panel-border: #cbd5e1;
+      --panel-shadow: rgba(148, 163, 184, 0.15);
+      --text-main: #334155;
+      --text-sub: #64748b;
+      --text-accent: #0f172a;
+      --primary-grad-start: #fbbf24;
+      --primary-grad-end: #f59e0b;
+      --primary-shadow: rgba(245, 158, 11, 0.3);
+      --tech-blue: #3b82f6;
+      --tech-blue-bg: #eff6ff;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+      --error-text: #ef4444;
+      --radius-panel: 12px;
+      --radius-input: 6px;
+      --radius-btn: 6px;
+      --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 24px;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      background-image: radial-gradient(var(--bg-pattern) 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      min-height: 100vh;
+    }
+
+    header {
+      max-width: 1180px;
+      margin: 0 auto 24px;
+      border-bottom: 1px dashed var(--panel-border);
+      padding-bottom: 16px;
+      position: relative;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-accent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    h1::before {
+        content: '';
+        display: block;
+        width: 6px;
+        height: 24px;
+        background: linear-gradient(to bottom, var(--primary-grad-start), var(--primary-grad-end));
+        border-radius: 2px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+      opacity: 0.9;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 440px 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 960px) {
+      .app { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    section {
+      background: var(--panel-bg);
+      border-radius: var(--radius-panel);
+      border: 1px solid white;
+      padding: 24px;
+      box-shadow: 
+        0 0 0 1px var(--panel-border),
+        0 10px 30px -10px var(--panel-shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    section:hover {
+        box-shadow: 
+        0 0 0 1px #94a3b8,
+        0 15px 35px -10px var(--panel-shadow);
+    }
+
+    section + section { margin-top: 0; }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 8px;
+    }
+
+    .section-title .pill {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--tech-blue-bg);
+      color: var(--tech-blue);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+      color: var(--text-sub);
+      font-family: var(--font-sans);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select,
+    input[type="number"] {
+      width: 100%;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: var(--radius-input);
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: var(--text-accent);
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+    }
+    
+    input:focus,
+    textarea:focus,
+    select:focus {
+      background: #ffffff;
+      border-color: var(--tech-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--primary-grad-end);
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      vertical-align: sub;
+      cursor: pointer;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      max-height: 220px;
+      line-height: 1.6;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px; 
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: start;
+    }
+    
+    .small-text {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 5px;
+      font-family: var(--font-mono);
+      line-height: 1.4;
+    }
+
+    .api-input {
+      position: relative;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .api-key-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .api-key-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .api-key-row input {
+      padding-right: 12px;
+      font-family: var(--font-mono);
+      letter-spacing: -0.5px;
+    }
+
+    .api-key-row button {
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #2563eb;
+      cursor: pointer;
+      font-weight: 600;
+      height: 30px;
+    }
+
+    .api-key-row button.danger-action {
+      border-color: #fecaca;
+      background: #fff1f2;
+      color: #dc2626;
+    }
+
+    .api-key-row button:hover:not(.danger-action) { background: #dbeafe; }
+
+    .api-input-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .folder-status {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-sub);
+      margin-top: 8px;
+    }
+
+    .folder-status strong { color: var(--text-accent); }
+
+    button.primary,
+    button.secondary,
+    button.danger-action,
+    .btn-mini {
+      font-family: var(--font-sans);
+      border-radius: var(--radius-btn);
+      padding: 8px 16px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, var(--primary-grad-start), var(--primary-grad-end));
+      color: #3f2203;
+      box-shadow: 0 4px 12px var(--primary-shadow), inset 0 1px 0 rgba(255,255,255,0.3);
+      border: 1px solid rgba(251, 191, 36, 0.5);
+    }
+    button.primary:disabled { filter: grayscale(0.8); opacity: 0.6; cursor: not-allowed; }
+    button.primary:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px var(--primary-shadow), inset 0 1px 0 rgba(255,255,255,0.4);
+      filter: brightness(1.05);
+    }
+    button.primary:not(:disabled):active { transform: translateY(1px); box-shadow: 0 2px 4px var(--primary-shadow); }
+
+    button.secondary {
+      background: #ffffff;
+      color: var(--text-main);
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    button.secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+
+    button.danger-action {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #fda4af;
+    }
+    button.danger-action:hover { background: #ffe4e6; }
+
+    .btn-mini {
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 11px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      color: var(--text-sub);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .btn-mini:hover { border-color: #cbd5e1; background: #f8fafc; color: var(--text-main); }
+    .btn-mini.danger { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+    .btn-mini.info { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
+    .btn-mini.info:hover { background: #dbeafe; }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      padding-top: 16px;
+      border-top: 1px dashed #e2e8f0;
+    }
+
+    .status {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 99px;
+    }
+    .status.error { color: #dc2626; background: #fef2f2; }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      box-shadow: 0 0 0 2px rgba(203, 213, 225, 0.4);
+    }
+    .status-dot.ok { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+    .status-dot.busy {
+      background: #f59e0b;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+      animation: pulse 1.5s infinite;
+    }
+    .status-dot.error { background: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+
+    .drop-zone {
+      border-radius: 8px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      padding: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background-image: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 10px, #f1f5f9 10px, #f1f5f9 20px);
+    }
+    .drop-zone strong {
+      color: var(--primary-grad-end);
+      font-weight: 600;
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .drop-zone:hover { border-color: #94a3b8; }
+    .drop-zone.active {
+      border-color: var(--primary-grad-end);
+      background: #fffbeb;
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.1);
+    }
+
+    .ref-input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      background: white;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+    .ref-input-row-left { display: flex; gap: 8px; align-items: center; flex: 1; }
+    .ref-input-row input[type="file"] {
+      font-size: 11px;
+      color: var(--text-sub);
+      border: none;
+      background: transparent;
+      padding: 0;
+      width: 100%;
+    }
+    .ref-input-row input[type="file"]::file-selector-button {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-main);
+        background-color: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 3px 8px;
+        margin-right: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .ref-input-row input[type="file"]::file-selector-button:hover { background-color: #e2e8f0; }
+
+    .ref-image-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .ref-image-item {
+      position: relative;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    .ref-thumb-wrap {
+      width: 100%;
+      border-radius: 3px;
+      overflow: hidden;
+      background: #e2e8f0;
+      cursor: zoom-in;
+    }
+    .ref-thumb-wrap img {
+      width: 100%;
+      height: 60px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .ref-thumb-wrap:hover img { transform: scale(1.1); }
+
+    .ref-meta { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+    .ref-name {
+      font-size: 9px;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 55px;
+    }
+    .ref-count-hint { font-size: 11px; color: #94a3b8; font-family: var(--font-mono); margin-top: 4px; }
+
+    .results-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .results-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    @media (min-width: 961px) {
+      .results-panel {
+        max-height: calc(100vh - 180px);
+      }
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .results-header-title { font-size: 14px; font-weight: 700; color: var(--text-accent); }
+    .results-header-sub { font-size: 11px; color: var(--text-sub); }
+    .results-header-right { display: flex; align-items: center; gap: 12px; }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      min-height: 200px;
+      position: relative;
+    }
+    .results-drop-hint {
+      position: absolute;
+      inset: 8px;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      background: rgba(248, 250, 252, 0.9);
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .results-drop-hint span { display: block; font-size: 11px; font-weight: 500; color: #94a3b8; margin-top: 6px; }
+    .results-drop-hint.visible { display: flex; }
+
+    .list-move-card {
+      border-radius: 8px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    .list-move-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-accent);
+      letter-spacing: 0.05em;
+    }
+    .list-move-card-desc {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin: 0;
+    }
+    .list-move-card-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .list-move-card-controls select {
+      flex: 1;
+      border-radius: var(--radius-input);
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+      background: #fff;
+      color: var(--text-main);
+      min-width: 0;
+    }
+    .list-move-card-controls select:disabled {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+    .list-move-card-hint {
+      font-size: 11px;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+    }
+
+    .result-card {
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .result-card.drag-sort-before::before,
+    .result-card.drag-sort-after::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--tech-blue);
+      box-shadow: 0 0 8px rgba(59,130,246,0.4);
+    }
+    .result-card.drag-sort-before::before { top: 2px; }
+    .result-card.drag-sort-after::after { bottom: 2px; }
+    .result-card:hover {
+      transform: translateY(-2px);
+      border-color: #cbd5e1;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    }
+
+    .result-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge {
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--tech-blue-bg);
+      color: var(--tech-blue);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      font-weight: 600;
+    }
+    .badge.retry { background: #fff7ed; color: #c2410c; border-color: #ffedd5; }
+    .badge.cancel { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+
+    .thumb-wrap {
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f1f5f9;
+      cursor: zoom-in;
+      aspect-ratio: 1 / 1;
+      position: relative;
+      border: 1px solid #f1f5f9;
+    }
+    .thumb-wrap::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background-image: 
+          linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+          linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+          linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+          linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+        background-size: 10px 10px;
+        background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+        opacity: 0.3;
+    }
+    .thumb-wrap img {
+      width: 100%;
+      height: 100%;
+      min-height: 140px;
+      object-fit: cover;
+      display: block;
+      position: relative;
+      z-index: 1;
+      -webkit-user-drag: element; 
+      user-select: none;
+      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .thumb-wrap:hover img { transform: scale(1.05); }
+
+    .result-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--text-sub);
+      flex-wrap: wrap;
+      font-family: var(--font-mono);
+      padding: 0 2px;
+    }
+    .result-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .result-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .result-actions > * { flex: 1; min-width: 0; }
+    .result-actions a { text-decoration: none; display: flex; }
+    .result-actions button, .result-actions a > button {
+      width: 100%;
+      justify-content: center;
+      font-size: 10px;
+      height: 24px;
+      padding: 0;
+    }
+
+    .result-card.skeleton { background: #ffffff; border-color: #e2e8f0; }
+    .skeleton-thumb {
+      height: 140px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-thumb::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+        animation: scan 1.5s infinite;
+    }
+    @keyframes scan { 0% { left: -50%; } 100% { left: 150%; } }
+    .skeleton-line { height: 6px; border-radius: 2px; background: #f1f5f9; margin-top: 6px; width: 60%; }
+    .skeleton-footer { margin-top: 8px; }
+    .status-text { font-size: 10px; color: var(--tech-blue); }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.99);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .lightbox.visible { opacity: 1; pointer-events: auto; }
+    .lightbox-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden; 
+    }
+    .lightbox-inner img {
+      max-width: 90vw;
+      max-height: 90vh;
+      display: block;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 20px 50px rgba(0, 0, 0, 0.3);
+      background: #0f172a;
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+      cursor: zoom-in;
+      transform-origin: center center;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .lightbox-inner img.zoomed { cursor: grab; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+    .lightbox-inner img.zoomed:active { cursor: grabbing; }
+    .lightbox-inner img.dragging { transition: none !important; }
+    .lightbox-close {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 24px;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+    .lightbox-close:hover { background: rgba(0, 0, 0, 0.7); }
+    
+    .config-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-bottom: 16px;
+    }
+    .config-group label {
+        margin: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        flex: 1;
+        font-weight: 500;
+        color: var(--text-main);
+    }
+    .config-group input[type="number"] { width: 60px; padding: 4px 8px; font-size: 12px; background: #fff; }
+
+    .list-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .list-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .list-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-sub);
+      position: relative;
+    }
+
+    .list-tab.active {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .list-tab.drop-target {
+      border-color: #22c55e;
+      background: #ecfdf5;
+      color: #15803d;
+    }
+
+    .list-tab.dragging {
+      opacity: 0.5;
+      background: #e2e8f0;
+      border-style: dashed;
+    }
+
+    .list-tab.drag-over-left {
+      border-left: 2px solid var(--tech-blue);
+      margin-left: -2px; /* Prevent jitter */
+    }
+    
+    .list-tab.drag-over-right {
+      border-right: 2px solid var(--tech-blue);
+      margin-right: -2px;
+    }
+
+    .timestamp-badge {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-sub);
+    }
+
+    .fs-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .fs-overlay.hidden { display: none; }
+
+    .fs-overlay .overlay-panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 420px;
+      width: calc(100% - 48px);
+      box-shadow: 0 20px 60px rgba(15,23,42,0.25);
+      text-align: center;
+    }
+
+    .fs-overlay h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .fs-overlay p {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .fs-overlay .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .fs-overlay .status {
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .import-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+    .import-overlay.hidden { display: none; }
+    .import-panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: min(480px, calc(100% - 48px));
+      box-shadow: 0 20px 60px rgba(15,23,42,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .import-panel h2 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--text-accent);
+    }
+    .import-preview {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .import-preview img {
+      width: 96px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .import-preview .import-filename {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+      word-break: break-all;
+    }
+    .import-panel .import-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .import-panel textarea,
+    .import-panel input[type="text"] {
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-input);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      background: #f8fafc;
+    }
+    .import-panel textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .import-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .import-meta-grid label {
+      font-size: 12px;
+      color: var(--text-sub);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .import-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="fsOverlay" class="fs-overlay hidden" aria-modal="true" role="dialog">
+    <div class="overlay-panel">
+      <h2>Local Storage Authorization</h2>
+      <p>On first use you need to choose a local folder and grant read/write access so generated images and metadata can be saved automatically. Authorization must be granted again every time you open the app.</p>
+      <div class="btn-row">
+        <button id="selectFolderBtn" class="primary" type="button">Choose or Authorize Folder</button>
+      </div>
+      <div class="status" id="fsPermissionStatus">
+        <span class="status-dot"></span>
+        <span>Awaiting authorization</span>
+      </div>
+    </div>
+  </div>
+  <div id="importOverlay" class="import-overlay hidden" aria-modal="true" role="dialog">
+    <div class="import-panel" role="document">
+      <h2>Import Image</h2>
+      <div class="import-preview">
+        <img id="importPreview" src="" alt="Import preview" style="display:none;" />
+        <div class="import-filename" id="importFilename">Awaiting file selection</div>
+      </div>
+      <label class="import-field">
+        PROMPT NOTE
+        <textarea id="importPromptInput" placeholder="Optional: capture the prompt or annotations for this image"></textarea>
+      </label>
+      <div class="import-meta-grid">
+        <label>
+          RESOLUTION
+          <input type="text" id="importResolutionInput" placeholder="e.g. 1024x1024" />
+        </label>
+        <label>
+          ASPECT
+          <input type="text" id="importAspectInput" placeholder="e.g. 1:1" />
+        </label>
+      </div>
+      <div class="import-actions">
+        <button id="importCancelBtn" class="btn-mini danger" type="button">Cancel</button>
+        <button id="importConfirmBtn" class="btn-mini info" type="button">Import</button>
+      </div>
+    </div>
+  </div>
+  <header style="position: relative;">
+    <h1>Nano Banana Pro <span style="font-size: 12px; background: var(--text-accent); color: #fff; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 8px; font-family: var(--font-mono);">LAB</span></h1>
+    <div class="subtitle">
+      // PARALLEL EXECUTION PROTOCOL : GEMINI 3 PRO PREVIEW
+    </div>
+    <div class="folder-status" id="folderStatus">No output directory bound</div>
+    <button id="rebindFolderBtn" class="btn-mini info" type="button" style="margin-top:6px;">Re-authorize</button>
+    <button id="resetAppBtn" class="btn-mini" type="button" style="position: absolute; top: 0; right: 0; border-color: #fecaca; color: #ef4444; background: #fff;">⚠ RESET ALL</button>
+  </header>
+
+  <main class="app">
+    <section>
+      <div class="section-title">
+        CONFIGURATION
+        <span class="pill">Gemini 3 Pro</span>
+      </div>
+
+      <div class="api-input">
+        <label>API KEY ACCESS</label>
+        <div id="apiKeyList" class="api-key-list"></div>
+        <div class="api-input-actions">
+          <button id="addApiKeyBtn" class="btn-mini info" type="button">+ Add Key</button>
+          <button class="btn-mini" type="button" onclick="window.open('https://aistudio.google.com/app/apikey', '_blank')">Get Key</button>
+          <span class="small-text" style="margin-top:0;">Cycle through multiple keys in order</span>
+        </div>
+      </div>
+      
+      <div class="config-group">
+          <label>
+              <input type="checkbox" id="enableRetry">
+              Auto-Retry Protocol
+          </label>
+          <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="small-text" style="margin-top:0;">LIMIT</span>
+              <input type="number" id="maxRetries" value="3" min="1" max="20">
+          </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="resolution">RESOLUTION</label>
+          <select id="resolution">
+            <option value="1K">1K [STD]</option>
+            <option value="2K" selected>2K [HD]</option>
+            <option value="4K">4K [UHD]</option>
+          </select>
+        </div>
+        <div>
+          <label for="aspectRatio">ASPECT RATIO</label>
+          <select id="aspectRatio">
+            <option value="1:1">1 : 1</option>
+            <option value="3:2">3 : 2</option>
+            <option value="2:3">2 : 3</option>
+            <option value="4:3">4 : 3</option>
+            <option value="3:4" selected>3 : 4</option>
+            <option value="5:4">5 : 4</option>
+            <option value="4:5">4 : 5</option>
+            <option value="16:9">16 : 9</option>
+            <option value="9:16">9 : 16</option>
+            <option value="21:9">21 : 9</option>
+          </select>
+        </div>
+        <div>
+          <label for="count">BATCH</label>
+          <input id="count" type="number" min="1" max="20" value="1" />
+        </div>
+      </div>
+
+      <div style="margin-top: 4px; margin-bottom: 12px;">
+        <label for="prompt">PROMPT DATA</label>
+        <textarea id="prompt" placeholder="Input generation parameters..."></textarea>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <label>REFERENCE INPUT (Multi-Modal)</label>
+        <div id="dropZone" class="drop-zone">
+          <strong>DRAG & DROP IMAGE DATA HERE</strong>
+          <span style="font-size: 10px; opacity: 0.6;">Supports internal result dragging</span>
+        </div>
+
+        <div class="ref-input-row">
+          <div class="ref-input-row-left">
+              <input id="refImages" type="file" accept="image/*" multiple />
+          </div>
+          <button class="btn-mini info" type="button" id="pasteRefBtn" title="Paste from clipboard">PASTE</button>
+          <button class="btn-mini" type="button" id="clearAllRefsBtn" style="margin-left: 6px;">CLEAR</button>
+        </div>
+
+        <div id="refImageHint" class="ref-count-hint">No reference data loaded.</div>
+        <div id="refImageList" class="ref-image-list"></div>
+      </div>
+
+      <div class="actions">
+        <button id="generateBtn" class="primary" type="button">🍌 INITIALIZE</button>
+        <button id="cancelAllBtn" class="danger-action" type="button" style="display:none;">ABORT ALL</button>
+        <button id="clearResultsBtn" class="secondary" type="button">PURGE</button>
+        <div id="status" class="status">
+          <span class="status-dot"></span>
+          <span>READY</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="results-panel">
+      <div class="results-header">
+        <div>
+          <div class="results-header-title">OUTPUT STREAM</div>
+          <div class="results-header-sub">Pan & Zoom: Click to inspect, Drag to move. Arrow Keys to Switch.</div>
+        </div>
+        <div class="results-header-right">
+          <button id="importBtn" class="btn-mini" type="button">IMPORT IMAGE</button>
+        </div>
+      </div>
+      <div class="list-bar">
+        <div id="listTabs" class="list-tabs"></div>
+        <button id="addListBtn" class="btn-mini info" type="button" title="Create list" aria-label="Create new list">+</button>
+        <button id="removeListBtn" class="btn-mini danger" type="button" title="Delete current list" aria-label="Delete current list">-</button>
+      </div>
+      <div class="results-scroll">
+        <div id="results" class="results">
+          <div id="resultsDropHint" class="results-drop-hint" aria-hidden="true">
+            Drag images here<span>or click the "Import" button</span>
+          </div>
+          <div id="listMoveAllCard" class="list-move-card" aria-live="polite">
+            <div class="list-move-card-title">LIST TRANSFER</div>
+            <p class="list-move-card-desc">Move every task from the current list to another list.</p>
+            <div class="list-move-card-controls">
+              <select id="listMoveAllSelect">
+                <option value="">No other lists yet</option>
+              </select>
+              <button id="listMoveAllBtn" class="btn-mini info" type="button">MOVE ALL</button>
+            </div>
+            <div class="list-move-card-hint" id="listMoveAllHint">No tasks in the current list</div>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="importInput" accept="image/*" multiple style="display:none;" />
+    </section>
+  </main>
+
+  <div id="lightbox" class="lightbox" aria-hidden="true">
+    <div class="lightbox-inner">
+      <button type="button" class="lightbox-close" aria-label="Close preview">×</button>
+      <img id="lightboxImage" src="" alt="Preview image" draggable="false" />
+    </div>
+  </div>
+
+  <script>
+    /* --- Storage & Persistence System (IndexedDB + LocalStorage) --- */
+    const DB_NAME = "NanoBananaDB";
+    const DB_VERSION = 3;
+    const STORE_RESULTS = "results";
+    const STORE_REFS = "refs";
+    const LIST_STORAGE_KEY = "nano_banana_lists";
+    const CARD_ORDER_FILE = "_card-order.json";
+    const MAIN_LIST_ID = "main";
+    const DIR_PICKER_ID = "nano-banana-workspace";
+
+    // Initialize IndexedDB
+    let dbInstance = null;
+    const activeTasks = new Map();
+    let refImages = [];
+    const REF_IMAGE_LIMIT = 14;
+    const DEFAULT_IMAGE_MIME = "image/png";
+    const DISK_IMAGE_EXTENSIONS = ["png","jpg","jpeg","webp","gif","bmp"];
+    const resultsData = new Map();
+    let cardOrder = [];
+    let cardOrderDirty = false;
+    let cardOrderSavePromise = null;
+    let cardOrderLoadedFromDisk = false;
+    let cardOrderLoadPromise = null;
+    let draggingCardId = null;
+    let dragHoverState = null;
+    let dragOriginInfo = null;
+    const MIN_CARD_SORT_DRAG_DISTANCE = 12;
+    let transparentDragImage = null;
+    let fileDragDepth = 0;
+    let importDialogResolver = null;
+    let workingDirectoryHandle = null;
+    let folderAccessGranted = false;
+    let diskSyncQueued = false;
+    let dbHydrated = false;
+    let diskSyncPromise = null;
+    let listConfig = {
+        active: MAIN_LIST_ID,
+        lists: new Map([[MAIN_LIST_ID, { id: MAIN_LIST_ID, name: "Main", locked: true }]])
+    };
+    let listConfigDirty = false;
+
+    function openDB() {
+        if (dbInstance) return Promise.resolve(dbInstance);
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(STORE_RESULTS)) {
+                    db.createObjectStore(STORE_RESULTS, { keyPath: "taskId" });
+                }
+                if (!db.objectStoreNames.contains(STORE_REFS)) {
+                    db.createObjectStore(STORE_REFS, { keyPath: "id" });
+                }
+            };
+            request.onsuccess = (e) => {
+                dbInstance = e.target.result;
+                // Handle version changes (e.g. deletion) gracefully
+                dbInstance.onversionchange = () => {
+                    dbInstance.close();
+                    dbInstance = null;
+                };
+                resolve(dbInstance);
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
+    }
+
+    // LocalStorage Persistence for simple settings
+    function saveSettings() {
+        const settings = {
+            apiKeys: getApiKeyValues(),
+            prompt: promptInput.value,
+            resolution: resolutionSelect.value,
+            aspectRatio: aspectRatioSelect.value,
+            count: countInput.value,
+            enableRetry: enableRetryInput.checked,
+            maxRetries: maxRetriesInput.value
+        };
+        localStorage.setItem("nano_banana_settings", JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+        const saved = localStorage.getItem("nano_banana_settings");
+        if (saved) {
+            let appliedKeys = false;
+            try {
+                const s = JSON.parse(saved);
+                if (Array.isArray(s.apiKeys)) {
+                    setApiKeyInputs(s.apiKeys);
+                    appliedKeys = true;
+                }
+                if (s.prompt) promptInput.value = s.prompt;
+                if (s.resolution) resolutionSelect.value = s.resolution;
+                if (s.aspectRatio) aspectRatioSelect.value = s.aspectRatio;
+                if (s.count) countInput.value = s.count;
+                if (s.enableRetry !== undefined) enableRetryInput.checked = s.enableRetry;
+                if (s.maxRetries) maxRetriesInput.value = s.maxRetries;
+            } catch(e) { console.error("Failed to load settings", e); }
+            if (!appliedKeys) setApiKeyInputs([""]);
+        } else {
+            setApiKeyInputs([""]);
+        }
+    }
+
+    async function persistResultRecord(record) {
+        if (!record?.taskId) return;
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readwrite");
+            tx.objectStore(STORE_RESULTS).put(record);
+        } catch (err) {
+            console.error("Save result failed", err);
+        }
+    }
+
+    function normalizeOrderList(value) {
+        if (!Array.isArray(value)) return [];
+        return value.map(id => (typeof id === "string" ? id : "")).filter(Boolean);
+    }
+
+    function resetCardOrderTracking() {
+        cardOrder = [];
+        cardOrderDirty = false;
+        cardOrderLoadedFromDisk = false;
+        cardOrderLoadPromise = null;
+        cardOrderSavePromise = null;
+    }
+
+    function markCardOrderDirty() {
+        cardOrderDirty = true;
+        persistCardOrderToDisk();
+    }
+
+    async function loadCardOrderFromDisk(force = false) {
+        if (!force && cardOrderLoadedFromDisk) return true;
+        if (!folderAccessGranted || !workingDirectoryHandle?.getFileHandle) return false;
+        if (cardOrderLoadPromise) return cardOrderLoadPromise;
+        const targetHandle = workingDirectoryHandle;
+        
+        cardOrderLoadPromise = (async () => {
+            try {
+                const fileHandle = await targetHandle.getFileHandle(CARD_ORDER_FILE);
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                let parsed;
+                try {
+                    parsed = JSON.parse(text);
+                } catch (err) {
+                    console.warn("Failed to parse order file", err);
+                    parsed = null;
+                }
+
+                const rawOrder = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.order) ? parsed.order : []);
+                cardOrder = normalizeOrderList(rawOrder);
+
+                if (parsed && Array.isArray(parsed.lists) && parsed.lists.length > 0) {
+                    const newLists = new Map();
+                    let hasMain = false;
+                    
+                    parsed.lists.forEach(l => {
+                        if (l.id === MAIN_LIST_ID) hasMain = true;
+                        newLists.set(l.id, {
+                            id: l.id,
+                            name: l.name || "Unnamed List",
+                            locked: !!l.locked
+                        });
+                    });
+
+                    if (!hasMain) {
+                        const mainList = { id: MAIN_LIST_ID, name: "Main", locked: true };
+                        const tempMap = new Map();
+                        tempMap.set(MAIN_LIST_ID, mainList);
+                        newLists.forEach((v, k) => tempMap.set(k, v));
+                        listConfig.lists = tempMap;
+                    } else {
+                        listConfig.lists = newLists;
+                    }
+
+                    if (parsed.activeList && listConfig.lists.has(parsed.activeList)) {
+                        listConfig.active = parsed.activeList;
+                    }
+
+                    renderListTabs();
+                    updateMoveAllControl();
+                }
+
+                cardOrderDirty = false;
+                cardOrderLoadedFromDisk = true;
+                return true;
+            } catch (err) {
+                if (err?.name === "NotFoundError") {
+                    cardOrderLoadedFromDisk = true;
+                    return false; 
+                }
+                if (err?.name === "NotAllowedError") {
+                    handleFolderAccessError("Re-authorize the output directory");
+                    return false;
+                }
+                console.warn("Failed to read order file", err);
+                cardOrderLoadedFromDisk = true;
+                return false;
+            } finally {
+                cardOrderLoadPromise = null;
+            }
+        })();
+        return cardOrderLoadPromise;
+    }
+
+    async function persistCardOrderToDisk() {
+        if (!cardOrderDirty && !listConfigDirty) return; 
+        if (!folderAccessGranted || !workingDirectoryHandle?.getFileHandle) return;
+        if (cardOrderSavePromise) return cardOrderSavePromise;
+
+        const listsArray = Array.from(listConfig.lists.values());
+        const payload = JSON.stringify({ 
+            version: 2,
+            order: cardOrder, 
+            lists: listsArray, 
+            activeList: listConfig.active, 
+            updatedAt: Date.now() 
+        }, null, 2);
+
+        const targetHandle = workingDirectoryHandle;
+        cardOrderSavePromise = (async () => {
+            try {
+                const fileHandle = await targetHandle.getFileHandle(CARD_ORDER_FILE, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(payload);
+                await writable.close();
+                
+                cardOrderDirty = false;
+                listConfigDirty = false; 
+            } catch (err) {
+                cardOrderDirty = true; 
+                if (err?.name === "NotAllowedError") {
+                    handleFolderAccessError("Re-authorize the output directory");
+                } else {
+                    console.warn("Failed to write order file", err);
+                }
+            } finally {
+                cardOrderSavePromise = null;
+                if ((cardOrderDirty || listConfigDirty) && folderAccessGranted && workingDirectoryHandle) {
+                    setTimeout(() => persistCardOrderToDisk(), 300);
+                }
+            }
+        })();
+        return cardOrderSavePromise;
+    }
+
+    function captureOrderFromDom() {
+        if (!resultsEl) return;
+        const ids = Array.from(resultsEl.querySelectorAll(".result-card"))
+            .map(card => card.dataset.taskId)
+            .filter(Boolean);
+        const changed = cardOrder.length !== ids.length || cardOrder.some((id, idx) => id !== ids[idx]);
+        cardOrder = ids;
+        if (changed) markCardOrderDirty();
+    }
+
+    function getCardTimestampValue(card) {
+        if (!card) return 0;
+        const taskId = card.dataset.taskId;
+        if (taskId) {
+            const record = resultsData.get(taskId);
+            if (record?.timestamp) return record.timestamp;
+        }
+        const attr = card.dataset.createdAt;
+        return attr ? Number(attr) : 0;
+    }
+
+    function applyStoredCardOrder() {
+        if (!resultsEl) return;
+        const cards = Array.from(resultsEl.querySelectorAll(".result-card")).filter(card => card.dataset.taskId);
+        if (!cards.length) return;
+        if (!cardOrder.length) {
+            const sorted = cards.slice().sort((a, b) => getCardTimestampValue(b) - getCardTimestampValue(a));
+            const fragment = document.createDocumentFragment();
+            sorted.forEach(card => fragment.appendChild(card));
+            insertBeforeListMoveCard(fragment);
+            const newOrder = sorted.map(card => card.dataset.taskId);
+            const changed = cardOrder.length !== newOrder.length || cardOrder.some((id, idx) => id !== newOrder[idx]);
+            cardOrder = newOrder;
+            if (changed) markCardOrderDirty();
+            return;
+        }
+        const cardMap = new Map(cards.map(card => [card.dataset.taskId, card]));
+        const fragment = document.createDocumentFragment();
+        const newOrder = [];
+        cardOrder.forEach(id => {
+            const card = cardMap.get(id);
+            if (!card) return;
+            fragment.appendChild(card);
+            newOrder.push(id);
+            cardMap.delete(id);
+        });
+        if (cardMap.size) {
+            const leftovers = Array.from(cardMap.values()).sort((a, b) => getCardTimestampValue(b) - getCardTimestampValue(a));
+            leftovers.forEach(card => {
+                fragment.appendChild(card);
+                if (card.dataset.taskId) newOrder.push(card.dataset.taskId);
+            });
+        }
+        insertBeforeListMoveCard(fragment);
+        const changed = cardOrder.length !== newOrder.length || cardOrder.some((id, idx) => id !== newOrder[idx]);
+        cardOrder = newOrder;
+        if (changed) markCardOrderDirty();
+    }
+
+    function ensureTransparentDragImage() {
+        if (transparentDragImage) return transparentDragImage;
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        canvas.style.position = "fixed";
+        canvas.style.top = "-10px";
+        canvas.style.left = "-10px";
+        canvas.style.opacity = "0";
+        canvas.style.pointerEvents = "none";
+        document.body.appendChild(canvas);
+        transparentDragImage = canvas;
+        return transparentDragImage;
+    }
+
+    function dataTransferHasFiles(event) {
+        if (!event?.dataTransfer?.types) return false;
+        return Array.from(event.dataTransfer.types).includes("Files");
+    }
+
+    function showResultsFileDropHint() {
+        if (resultsDropHint) {
+            resultsDropHint.classList.add("visible");
+        }
+    }
+
+    function hideResultsFileDropHint() {
+        if (resultsDropHint) {
+            resultsDropHint.classList.remove("visible");
+        }
+        fileDragDepth = 0;
+    }
+
+    function isCardSortDragEvent(event) {
+        const types = Array.from(event?.dataTransfer?.types || []);
+        return types.includes("application/x-nano-card-sort");
+    }
+
+    function clearCardSortHints() {
+        if (!resultsEl) return;
+        resultsEl.querySelectorAll(".result-card.drag-sort-before, .result-card.drag-sort-after")
+            .forEach(card => {
+                card.classList.remove("drag-sort-before", "drag-sort-after");
+            });
+        dragHoverState = null;
+    }
+
+    function recordCardDragOrigin(e, card) {
+        if (!card) {
+            dragOriginInfo = null;
+            return;
+        }
+        dragOriginInfo = {
+            card,
+            parent: card.parentNode,
+            nextSibling: card.nextSibling,
+            startX: typeof e?.clientX === "number" ? e.clientX : null,
+            startY: typeof e?.clientY === "number" ? e.clientY : null
+        };
+    }
+
+    function restoreCardToOrigin() {
+        if (!dragOriginInfo?.card || !dragOriginInfo.parent) return false;
+        const { card, parent, nextSibling } = dragOriginInfo;
+        if (!parent.contains(card)) return false;
+        if (nextSibling && nextSibling.parentNode === parent) {
+            parent.insertBefore(card, nextSibling);
+        } else {
+            if (parent === resultsEl) insertBeforeListMoveCard(card);
+            else parent.appendChild(card);
+        }
+        return true;
+    }
+
+    function getCardDragDistance(e) {
+        if (!dragOriginInfo) return Infinity;
+        if (dragOriginInfo.startX == null || dragOriginInfo.startY == null) return Infinity;
+        if (typeof e?.clientX !== "number" || typeof e?.clientY !== "number") return Infinity;
+        const dx = e.clientX - dragOriginInfo.startX;
+        const dy = e.clientY - dragOriginInfo.startY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function clearCardDragOrigin() {
+        dragOriginInfo = null;
+    }
+
+    function shouldInsertBefore(e, targetCard) {
+        const rect = targetCard.getBoundingClientRect();
+        return (e.clientY - rect.top) < rect.height / 2;
+    }
+
+    function insertCardAtActiveListEnd(card) {
+        if (!resultsEl) return;
+        const activeCards = Array.from(resultsEl.querySelectorAll(`.result-card[data-list-id="${listConfig.active}"]`));
+        const lastCard = activeCards.filter(c => c.style.display !== "none").pop() || activeCards.pop();
+        if (!lastCard) {
+            insertAtResultsTop(card);
+            return;
+        }
+        insertAfterResultCard(lastCard, card);
+    }
+
+    function handleResultsDragEnter(e) {
+        if (dataTransferHasFiles(e) && !isCardSortDragEvent(e)) {
+            e.preventDefault();
+            fileDragDepth++;
+            showResultsFileDropHint();
+        }
+    }
+
+    function handleResultsDragOver(e) {
+        if (dataTransferHasFiles(e) && !isCardSortDragEvent(e)) {
+            e.preventDefault();
+            showResultsFileDropHint();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+            return;
+        }
+        if (!isCardSortDragEvent(e)) return;
+        e.preventDefault();
+        const targetCard = e.target.closest(".result-card");
+        if (!targetCard || targetCard.dataset.listId !== listConfig.active || targetCard.dataset.taskId === draggingCardId) {
+            clearCardSortHints();
+            return;
+        }
+        const insertBefore = shouldInsertBefore(e, targetCard);
+        if (insertBefore) {
+            targetCard.classList.add("drag-sort-before");
+            targetCard.classList.remove("drag-sort-after");
+        } else {
+            targetCard.classList.add("drag-sort-after");
+            targetCard.classList.remove("drag-sort-before");
+        }
+        dragHoverState = { card: targetCard, insertBefore };
+    }
+
+    function handleResultsDragLeave(e) {
+        if (dataTransferHasFiles(e) && !isCardSortDragEvent(e)) {
+            fileDragDepth = Math.max(0, fileDragDepth - 1);
+            if (!fileDragDepth) hideResultsFileDropHint();
+            return;
+        }
+        const targetCard = e.target.closest(".result-card");
+        if (targetCard) {
+            targetCard.classList.remove("drag-sort-before", "drag-sort-after");
+        }
+    }
+
+    function handleResultsDrop(e) {
+        if (dataTransferHasFiles(e) && !isCardSortDragEvent(e)) {
+            e.preventDefault();
+            hideResultsFileDropHint();
+            const files = Array.from(e.dataTransfer?.files || []);
+            if (files.length) {
+                handleManualImageImport(files);
+            }
+            return;
+        }
+        if (!isCardSortDragEvent(e)) return;
+        e.preventDefault();
+        const dragged = draggingCardId ? document.querySelector(`.result-card[data-task-id="${draggingCardId}"]`) : null;
+        let targetCard = e.target.closest(".result-card");
+        if (!dragged) {
+            clearCardSortHints();
+            clearCardDragOrigin();
+            return;
+        }
+        const dropDistance = getCardDragDistance(e);
+        const isTinyMovement = dropDistance < MIN_CARD_SORT_DRAG_DISTANCE;
+        if (!targetCard || targetCard.dataset.listId !== listConfig.active || targetCard === dragged) {
+            if (dragHoverState?.card && dragHoverState.card !== dragged && dragHoverState.card.dataset.listId === listConfig.active && resultsEl.contains(dragHoverState.card)) {
+                targetCard = dragHoverState.card;
+            }
+        }
+        const droppedOnSelf = targetCard === dragged;
+        const hasValidTarget = targetCard && targetCard.dataset.listId === listConfig.active && targetCard !== dragged;
+        if (!hasValidTarget) {
+            const reverted = (droppedOnSelf || isTinyMovement) ? restoreCardToOrigin() : false;
+            if (!reverted) {
+                insertCardAtActiveListEnd(dragged);
+            }
+        } else {
+            const insertBefore = (dragHoverState && dragHoverState.card === targetCard && typeof dragHoverState.insertBefore === "boolean")
+                ? dragHoverState.insertBefore
+                : shouldInsertBefore(e, targetCard);
+            if (insertBefore) resultsEl.insertBefore(dragged, targetCard);
+            else resultsEl.insertBefore(dragged, targetCard.nextSibling);
+        }
+        clearCardSortHints();
+        captureOrderFromDom();
+        clearCardDragOrigin();
+    }
+
+
+    /* --- UI Elements & Logic --- */
+    const generateBtn = document.getElementById("generateBtn");
+    const cancelAllBtn = document.getElementById("cancelAllBtn");
+    const clearResultsBtn = document.getElementById("clearResultsBtn");
+    const resetAppBtn = document.getElementById("resetAppBtn"); // NEW
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+    const resultsCountLabel = document.getElementById("resultsCountLabel");
+    const resultsDropHint = document.getElementById("resultsDropHint");
+    const listMoveAllCardEl = document.getElementById("listMoveAllCard");
+    const listMoveAllSelectEl = document.getElementById("listMoveAllSelect");
+    const listMoveAllBtn = document.getElementById("listMoveAllBtn");
+    const listMoveAllHintEl = document.getElementById("listMoveAllHint");
+
+    function getListMoveCardAnchor() {
+        if (!resultsEl || !listMoveAllCardEl) return null;
+        return listMoveAllCardEl.parentNode === resultsEl ? listMoveAllCardEl : null;
+    }
+
+    function insertBeforeListMoveCard(node) {
+        if (!resultsEl || !node) return;
+        const anchor = getListMoveCardAnchor();
+        if (anchor) {
+            resultsEl.insertBefore(node, anchor);
+        } else {
+            resultsEl.appendChild(node);
+        }
+    }
+
+    function insertAtResultsTop(node) {
+        if (!resultsEl || !node) return;
+        const cards = Array.from(resultsEl.querySelectorAll(".result-card"));
+        const firstCard = cards.find(card => card !== node);
+        if (firstCard) {
+            resultsEl.insertBefore(node, firstCard);
+        } else {
+            insertBeforeListMoveCard(node);
+        }
+    }
+
+    function insertAfterResultCard(referenceCard, node) {
+        if (!resultsEl || !referenceCard || !node) return;
+        const anchor = referenceCard.nextSibling || getListMoveCardAnchor();
+        if (anchor) {
+            resultsEl.insertBefore(node, anchor);
+        } else {
+            resultsEl.appendChild(node);
+        }
+    }
+    const importBtn = document.getElementById("importBtn");
+    const importInput = document.getElementById("importInput");
+    const importOverlayEl = document.getElementById("importOverlay");
+    const importPromptInput = document.getElementById("importPromptInput");
+    const importResolutionInput = document.getElementById("importResolutionInput");
+    const importAspectInput = document.getElementById("importAspectInput");
+    const importConfirmBtn = document.getElementById("importConfirmBtn");
+    const importCancelBtn = document.getElementById("importCancelBtn");
+    const importPreviewImg = document.getElementById("importPreview");
+    const importFilenameEl = document.getElementById("importFilename");
+    const apiKeyListEl = document.getElementById("apiKeyList");
+    const addApiKeyBtn = document.getElementById("addApiKeyBtn");
+    const fsOverlay = document.getElementById("fsOverlay");
+    const selectFolderBtn = document.getElementById("selectFolderBtn");
+    const fsPermissionStatus = document.getElementById("fsPermissionStatus");
+    const folderStatusEl = document.getElementById("folderStatus");
+    const rebindFolderBtn = document.getElementById("rebindFolderBtn");
+    const listTabsEl = document.getElementById("listTabs");
+    const addListBtn = document.getElementById("addListBtn");
+    const removeListBtn = document.getElementById("removeListBtn");
+    const promptInput = document.getElementById("prompt");
+    
+    const countInput = document.getElementById("count");
+    const resolutionSelect = document.getElementById("resolution");
+    const aspectRatioSelect = document.getElementById("aspectRatio");
+    const enableRetryInput = document.getElementById("enableRetry");
+    const maxRetriesInput = document.getElementById("maxRetries");
+
+    resultsEl.addEventListener("dragenter", handleResultsDragEnter);
+    resultsEl.addEventListener("dragover", handleResultsDragOver);
+    resultsEl.addEventListener("dragleave", handleResultsDragLeave);
+    resultsEl.addEventListener("drop", handleResultsDrop);
+
+    const apiKeyManager = {
+        keys: [],
+        index: 0,
+        setKeys(keys) {
+            // 1. Filter valid keys
+            const newKeys = keys.filter(Boolean);
+            
+            // 2. Only adjust the index when the key list length changes or the current index is out of range
+            // This preserves the round-robin progress
+            this.keys = newKeys;
+            
+            if (this.keys.length > 0) {
+                // If the current index exceeds the new array (e.g. a key was removed), wrap with modulo to avoid errors
+                // Otherwise keep it as-is and continue rotating
+                this.index = this.index % this.keys.length;
+            } else {
+                this.index = 0;
+            }
+        },
+        getNextKey() {
+            if (!this.keys.length) return null;
+            if (this.index >= this.keys.length) this.index = 0;
+            const key = this.keys[this.index];
+            // 3. Move the pointer to the next key
+            this.index = (this.index + 1) % this.keys.length;
+            return key;
+        }
+    };
+
+    function getApiKeyValues() {
+        return Array.from(apiKeyListEl.querySelectorAll("input"))
+            .map(input => input.value.trim())
+            .filter(Boolean);
+    }
+
+    function updateApiKeyManagerFromInputs() {
+        apiKeyManager.setKeys(getApiKeyValues());
+    }
+
+    function setApiKeyInputs(values) {
+        apiKeyListEl.innerHTML = "";
+        const populated = Array.isArray(values) && values.length ? values : [""];
+        populated.forEach(val => apiKeyListEl.appendChild(createApiKeyRow(val)));
+        updateApiKeyManagerFromInputs();
+    }
+
+    function createApiKeyRow(value = "") {
+        const row = document.createElement("div");
+        row.className = "api-key-row";
+        const input = document.createElement("input");
+        input.type = "password";
+        input.placeholder = "ENTER_YOUR_KEY_HERE";
+        input.autocomplete = "off";
+        input.value = value || "";
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.textContent = "SHOW";
+        toggleBtn.addEventListener("click", () => {
+            if (input.type === "password") {
+                input.type = "text";
+                toggleBtn.textContent = "HIDE";
+            } else {
+                input.type = "password";
+                toggleBtn.textContent = "SHOW";
+            }
+        });
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "danger-action";
+        removeBtn.textContent = "DEL";
+        removeBtn.addEventListener("click", () => {
+            if (apiKeyListEl.children.length === 1) {
+                input.value = "";
+            } else {
+                row.remove();
+            }
+            updateApiKeyManagerFromInputs();
+            saveSettings();
+        });
+        input.addEventListener("input", () => {
+            updateApiKeyManagerFromInputs();
+            saveSettings();
+        });
+        row.appendChild(input);
+        row.appendChild(toggleBtn);
+        row.appendChild(removeBtn);
+        return row;
+    }
+
+    function setFolderStatus(text, mode = "waiting") {
+        if (!fsPermissionStatus) return;
+        const dot = fsPermissionStatus.querySelector(".status-dot");
+        const content = fsPermissionStatus.querySelector("span:nth-child(2)");
+        dot.className = "status-dot";
+        if (mode === "ok") dot.classList.add("ok");
+        else if (mode === "error") dot.classList.add("error");
+        else dot.classList.add("busy");
+        content.textContent = text;
+    }
+
+    function updateFolderStatusLabel() {
+        if (!folderStatusEl) return;
+        if (!workingDirectoryHandle) {
+            folderStatusEl.textContent = "No output directory bound";
+        } else {
+            const suffix = folderAccessGranted ? "(Authorized)" : "(Pending)";
+            folderStatusEl.innerHTML = `Output directory: <strong>${workingDirectoryHandle.name}</strong> ${suffix}`;
+        }
+        updateFolderButtonLabel();
+    }
+
+    function updateFolderButtonLabel() {
+        if (!selectFolderBtn) return;
+        if (workingDirectoryHandle) {
+            selectFolderBtn.textContent = "Confirm output directory authorization";
+        } else {
+            selectFolderBtn.textContent = "Select output directory";
+        }
+    }
+
+    function handleFolderAccessError(message = "Re-authorize the output directory") {
+        folderAccessGranted = false;
+        updateFolderStatusLabel();
+        showFolderOverlay(message);
+    }
+
+    function showFolderOverlay(message = "Please authorize the output directory to continue") {
+        if (!fsOverlay) return;
+        fsOverlay.classList.remove("hidden");
+        setFolderStatus(message, folderAccessGranted ? "ok" : "busy");
+    }
+
+    function hideFolderOverlay() {
+        if (!fsOverlay) return;
+        fsOverlay.classList.add("hidden");
+    }
+
+    async function checkDirectoryPermission(handle) {
+        if (!handle?.queryPermission) return false;
+        try {
+            const status = await handle.queryPermission({ mode: "readwrite" });
+            return status === "granted";
+        } catch (err) {
+            console.warn("Permission query failed", err);
+            return false;
+        }
+    }
+
+    async function ensurePersistentStorage() {
+        if (!navigator?.storage?.persist) return;
+        try {
+            await navigator.storage.persist();
+        } catch (err) {
+            console.warn("Persistent storage request failed", err);
+        }
+    }
+
+    async function requestDirectoryPermission(handle) {
+        if (!handle) return false;
+        if (await checkDirectoryPermission(handle)) return true;
+        if (!handle.requestPermission) return false;
+        const result = await handle.requestPermission({ mode: "readwrite" });
+        return result === "granted";
+    }
+
+    async function handleFolderSelection() {
+        try {
+            if (!window.showDirectoryPicker && !workingDirectoryHandle) {
+                setFolderStatus("This browser does not support the local file system", "error");
+                return;
+            }
+            if (!workingDirectoryHandle) {
+                const pickerOptions = { mode: "readwrite" };
+                if (DIR_PICKER_ID) pickerOptions.id = DIR_PICKER_ID;
+                workingDirectoryHandle = await window.showDirectoryPicker(pickerOptions);
+                updateFolderStatusLabel();
+            }
+            const granted = await requestDirectoryPermission(workingDirectoryHandle);
+            if (granted) {
+                folderAccessGranted = true;
+                updateFolderStatusLabel();
+                setFolderStatus("Read/write access granted", "ok");
+                hideFolderOverlay();
+                await loadCardOrderFromDisk(true);
+                applyStoredCardOrder();
+                filterResultsView();
+                persistCardOrderToDisk();
+                queueDiskSync();
+            } else {
+                folderAccessGranted = false;
+                setFolderStatus("Permission denied, please try again", "error");
+            }
+        } catch (err) {
+            console.error(err);
+            folderAccessGranted = false;
+            setFolderStatus("Authorization failed, please try again", "error");
+        }
+    }
+
+    function requireFolderAccess() {
+        if (folderAccessGranted && workingDirectoryHandle) return true;
+        showFolderOverlay();
+        if (workingDirectoryHandle) setFolderStatus("Please re-authorize the output directory", "error");
+        else setFolderStatus("Please select an output directory first", "error");
+        return false;
+    }
+
+    function loadListPreferences() {
+        listConfig = {
+            active: MAIN_LIST_ID,
+            lists: new Map()
+        };
+        listConfig.lists.set(MAIN_LIST_ID, { id: MAIN_LIST_ID, name: "Main", locked: true });
+        const saved = localStorage.getItem(LIST_STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed.lists)) {
+                    const ordered = [];
+                    parsed.lists.forEach(item => {
+                        if (item.id === MAIN_LIST_ID) {
+                            ordered.push({ id: MAIN_LIST_ID, name: "Main", locked: true });
+                        } else {
+                            ordered.push({ id: item.id, name: item.name || "List", locked: !!item.locked && item.id === MAIN_LIST_ID });
+                        }
+                    });
+                    listConfig.lists.clear();
+                    ordered.forEach(item => {
+                        if (!item.id) return;
+                        const locked = item.id === MAIN_LIST_ID ? true : !!item.locked;
+                        const name = item.id === MAIN_LIST_ID ? "Main" : item.name || "List";
+                        listConfig.lists.set(item.id, { id: item.id, name, locked });
+                    });
+                    if (!listConfig.lists.has(MAIN_LIST_ID)) {
+                        listConfig.lists = new Map([[MAIN_LIST_ID, { id: MAIN_LIST_ID, name: "Main", locked: true }]]);
+                    }
+                }
+                if (parsed.active && listConfig.lists.has(parsed.active)) {
+                    listConfig.active = parsed.active;
+                }
+            } catch (err) {
+                console.warn("Load list preferences failed", err);
+            }
+        }
+        renderListTabs();
+        updateMoveAllControl();
+    }
+
+    function saveListPreferences() {
+        const payload = {
+            active: listConfig.active,
+            lists: Array.from(listConfig.lists.values()).map(list => ({
+                id: list.id,
+                name: list.name,
+                locked: !!list.locked
+            }))
+        };
+        localStorage.setItem(LIST_STORAGE_KEY, JSON.stringify(payload));
+
+        listConfigDirty = true;
+        persistCardOrderToDisk();
+    }
+
+    function getListCardCount(listId) {
+        return resultsEl.querySelectorAll(`.result-card[data-list-id="${listId}"]`).length;
+    }
+
+    // --- New function: handle list reordering ---
+    function reorderLists(sourceId, targetId, position) {
+        if (sourceId === targetId || sourceId === MAIN_LIST_ID) return; // Main list cannot be moved
+
+        // 1. Convert the Map to an array for easier operations
+        let listArray = Array.from(listConfig.lists.values());
+        
+        // 2. Find the source and target indexes
+        const sourceIndex = listArray.findIndex(l => l.id === sourceId);
+        const targetIndex = listArray.findIndex(l => l.id === targetId);
+        
+        if (sourceIndex === -1 || targetIndex === -1) return;
+
+        // 3. Remove the source element
+        const [movedItem] = listArray.splice(sourceIndex, 1);
+
+        // 4. Compute the insertion spot (removing an element shifts indexes, so recompute the target index)
+        const newTargetIndex = listArray.findIndex(l => l.id === targetId);
+        
+        if (position === 'before') {
+            // If the target is the Main List and the insertion tries to precede it, force the position to index 1
+            if (listArray[newTargetIndex].id === MAIN_LIST_ID) {
+                 listArray.splice(1, 0, movedItem);
+            } else {
+                 listArray.splice(newTargetIndex, 0, movedItem);
+            }
+        } else {
+            listArray.splice(newTargetIndex + 1, 0, movedItem);
+        }
+
+        // 5. Keep the Main List at index 0 (double safety)
+        const mainListIndex = listArray.findIndex(l => l.id === MAIN_LIST_ID);
+        if (mainListIndex > 0) {
+            const [mainItem] = listArray.splice(mainListIndex, 1);
+            listArray.unshift(mainItem);
+        }
+
+        // 6. Rebuild the Map and persist it
+        listConfig.lists = new Map(listArray.map(item => [item.id, item]));
+        saveListPreferences();
+        renderListTabs();
+    }
+
+    function renderListTabs() {
+        if (!listTabsEl) return;
+        listTabsEl.innerHTML = "";
+        
+        listConfig.lists.forEach(list => {
+            const tab = document.createElement("div");
+            // Main List cannot be dragged; other lists can
+            const isMain = list.id === MAIN_LIST_ID;
+            tab.className = "list-tab" + (list.id === listConfig.active ? " active" : "");
+            if (!isMain) {
+                tab.draggable = true;
+                tab.style.cursor = "grab"; 
+            }
+            tab.dataset.listId = list.id;
+
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = `${list.name} (${getListCardCount(list.id)})`;
+            
+            if (!list.locked) {
+                nameSpan.title = "Double-click to rename";
+                nameSpan.style.cursor = "text"; 
+                nameSpan.addEventListener("dblclick", (e) => {
+                    e.stopPropagation();
+                    const newName = prompt("Rename list:", list.name);
+                    if (newName && newName.trim()) {
+                        list.name = newName.trim();
+                        saveListPreferences();
+                        renderListTabs();
+                        updateMoveAllControl();
+                    }
+                });
+            }
+            tab.appendChild(nameSpan);
+
+            // Click to switch lists
+            tab.addEventListener("click", () => setActiveList(list.id));
+
+            // --- Drag-and-drop handling start ---
+            
+            // 1. Start dragging (list ordering only)
+            if (!isMain) {
+                tab.addEventListener("dragstart", (e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData("application/x-nano-list-id", list.id);
+                    e.dataTransfer.effectAllowed = "move";
+                    tab.classList.add("dragging");
+                });
+
+                tab.addEventListener("dragend", (e) => {
+                    tab.classList.remove("dragging");
+                    document.querySelectorAll(".list-tab").forEach(t => {
+                        t.classList.remove("drag-over-left", "drag-over-right");
+                    });
+                });
+            }
+
+            // 2. Drag over (handles list ordering and card reassignment)
+            tab.addEventListener("dragover", (e) => {
+                e.preventDefault(); // allow drop
+                const types = Array.from(e.dataTransfer?.types || []);
+
+                // Case A: dragging a card (existing behavior)
+                if (types.includes("application/x-nano-card-id")) {
+                    tab.classList.add("drop-target");
+                    e.dataTransfer.dropEffect = "move";
+                    return;
+                }
+
+                // Case B: dragging a list (new behavior)
+                if (types.includes("application/x-nano-list-id")) {
+                    // Ignore drops on itself or attempts to drag the Main List (still blocked at dragstart)
+                    if (tab.classList.contains("dragging")) return;
+
+                    const rect = tab.getBoundingClientRect();
+                    const midX = rect.left + rect.width / 2;
+                    
+                    // Determine whether the cursor is on the left or right half
+                    if (e.clientX < midX) {
+                        tab.classList.add("drag-over-left");
+                        tab.classList.remove("drag-over-right");
+                    } else {
+                        tab.classList.add("drag-over-right");
+                        tab.classList.remove("drag-over-left");
+                    }
+                }
+            });
+
+            // 3. Drag leave
+            tab.addEventListener("dragleave", () => {
+                tab.classList.remove("drop-target", "drag-over-left", "drag-over-right");
+            });
+
+            // 4. Drop
+            tab.addEventListener("drop", (e) => {
+                e.preventDefault();
+                tab.classList.remove("drop-target", "drag-over-left", "drag-over-right");
+                
+                // Handle card reassignment
+                const cardTaskId = e.dataTransfer.getData("application/x-nano-card-id");
+                if (cardTaskId) {
+                    assignCardToList(cardTaskId, list.id);
+                    return;
+                }
+
+                // Handle list ordering
+                const sourceListId = e.dataTransfer.getData("application/x-nano-list-id");
+                if (sourceListId) {
+                    const rect = tab.getBoundingClientRect();
+                    const midX = rect.left + rect.width / 2;
+                    const position = e.clientX < midX ? 'before' : 'after';
+                    reorderLists(sourceListId, list.id, position);
+                }
+            });
+            // --- Drag-and-drop handling end ---
+
+            listTabsEl.appendChild(tab);
+        });
+        updateListActionButtons();
+    }
+
+    function updateListActionButtons() {
+        if (!removeListBtn) return;
+        const activeList = listConfig.lists.get(listConfig.active);
+        const canDelete = !!activeList && !activeList.locked;
+        removeListBtn.disabled = !canDelete;
+        if (canDelete) {
+            removeListBtn.title = `Delete list "${activeList.name}"`;
+        } else {
+            removeListBtn.title = "Main list cannot be deleted";
+        }
+    }
+
+    function setActiveList(listId) {
+        if (!listConfig.lists.has(listId)) listId = MAIN_LIST_ID;
+        listConfig.active = listId;
+        saveListPreferences();
+        filterResultsView();
+    }
+
+    function filterResultsView() {
+        const cards = resultsEl.querySelectorAll(".result-card");
+        cards.forEach(card => {
+            const listId = card.dataset.listId || MAIN_LIST_ID;
+            card.style.display = listId === listConfig.active ? "" : "none";
+        });
+        updateResultsCount();
+        renderListTabs();
+    }
+
+    function updateMoveAllControl() {
+        if (!listMoveAllCardEl || !listMoveAllSelectEl || !listMoveAllHintEl) return;
+        const currentValue = listMoveAllSelectEl.value;
+        const availableTargets = Array.from(listConfig.lists.values()).filter(list => list.id !== listConfig.active);
+        listMoveAllSelectEl.innerHTML = "";
+        if (!availableTargets.length) {
+            const opt = document.createElement("option");
+            opt.value = "";
+            opt.textContent = "No other lists yet";
+            listMoveAllSelectEl.appendChild(opt);
+        } else {
+            availableTargets.forEach((list) => {
+                const opt = document.createElement("option");
+                opt.value = list.id;
+                opt.textContent = list.name;
+                if (currentValue === list.id) opt.selected = true;
+                listMoveAllSelectEl.appendChild(opt);
+            });
+            if (!listMoveAllSelectEl.value && availableTargets[0]) {
+                listMoveAllSelectEl.value = availableTargets[0].id;
+            }
+        }
+        const activeCount = getListCardCount(listConfig.active);
+        const activeName = listConfig.lists.get(listConfig.active)?.name || "Current";
+        listMoveAllSelectEl.disabled = availableTargets.length === 0;
+        if (listMoveAllBtn) {
+            listMoveAllBtn.disabled = availableTargets.length === 0 || activeCount === 0;
+        }
+        listMoveAllHintEl.textContent = activeCount ? `${activeName} · ${activeCount} tasks` : `${activeName} list has no tasks`;
+        listMoveAllCardEl.style.display = "flex";
+    }
+
+    async function assignCardToList(taskId, targetListId) {
+        const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+        if (!card) return;
+        const listId = listConfig.lists.has(targetListId) ? targetListId : MAIN_LIST_ID;
+        card.dataset.listId = listId;
+        const record = resultsData.get(taskId);
+        if (record) {
+            record.listId = listId;
+            await updateStoredResult(taskId, { listId });
+            await persistResultMetadataSnapshot(taskId, record);
+        }
+        filterResultsView();
+    }
+
+    async function moveActiveListTasks(targetListId) {
+        if (!resultsEl || !listConfig.lists.has(targetListId)) {
+            setTemporaryErrorStatus("The target list is invalid");
+            return;
+        }
+        const sourceListId = listConfig.active;
+        if (sourceListId === targetListId) {
+            setTemporaryErrorStatus("Please choose a different target list");
+            return;
+        }
+        const cards = Array.from(resultsEl.querySelectorAll(`.result-card[data-list-id="${sourceListId}"]`));
+        if (!cards.length) {
+            setTemporaryErrorStatus("There are no tasks in the current list");
+            return;
+        }
+        const updateJobs = [];
+        cards.forEach(card => {
+            card.dataset.listId = targetListId;
+            const taskId = card.dataset.taskId;
+            if (taskId && resultsData.has(taskId)) {
+                const record = resultsData.get(taskId);
+                record.listId = targetListId;
+                updateJobs.push(updateStoredResult(taskId, { listId: targetListId }));
+                updateJobs.push(persistResultMetadataSnapshot(taskId, record));
+            }
+        });
+        if (updateJobs.length) {
+            try {
+                await Promise.all(updateJobs);
+            } catch (err) {
+                console.warn("Failed to update while moving lists in bulk", err);
+            }
+        }
+        filterResultsView();
+    }
+
+    function handleMoveAllBtnClick() {
+        if (!listMoveAllSelectEl) return;
+        const targetListId = listMoveAllSelectEl.value;
+        if (!targetListId) {
+            setTemporaryErrorStatus("Please select a target list");
+            return;
+        }
+        moveActiveListTasks(targetListId);
+    }
+
+    function addCustomList() {
+        const name = prompt("Please enter a list name", "New List");
+        if (!name) return;
+        const id = `list_${Date.now().toString(36)}`;
+        listConfig.lists.set(id, { id, name: name.trim() || "List", locked: false });
+        saveListPreferences();
+        setActiveList(id);
+    }
+
+    async function removeList(listId) {
+        const list = listConfig.lists.get(listId);
+        if (!list || list.locked) return;
+        const confirmed = confirm(`Delete the list "${list.name}"?`);
+        if (!confirmed) return;
+        listConfig.lists.delete(listId);
+        const affectedCards = Array.from(resultsEl.querySelectorAll(`.result-card[data-list-id="${listId}"]`));
+        let deleteAll = false;
+        if (affectedCards.length) {
+            deleteAll = confirm(`How should the ${affectedCards.length} tasks be handled after deleting the list?\nOK = Delete all tasks\nCancel = Move them to the Main List`);
+        }
+        if (deleteAll) {
+            const ids = [];
+            const fileTargets = [];
+            affectedCards.forEach(card => {
+                const taskId = card.dataset.taskId;
+                if (!taskId) return;
+                ids.push(taskId);
+                card.remove();
+                const record = resultsData.get(taskId);
+                if (record) {
+                    fileTargets.push({ taskId, meta: record.meta });
+                    cleanupResultRecord(taskId);
+                }
+            });
+            captureOrderFromDom();
+            filterResultsView();
+            try {
+                const db = await openDB();
+                const tx = db.transaction(STORE_RESULTS, "readwrite");
+                const store = tx.objectStore(STORE_RESULTS);
+                ids.forEach(id => store.delete(id));
+            } catch (err) {
+                console.warn("Failed to delete list records", err);
+            }
+            await Promise.all(fileTargets.map(({ taskId, meta }) => deleteResultFiles(taskId, meta)));
+        } else {
+            affectedCards.forEach(card => {
+                card.dataset.listId = MAIN_LIST_ID;
+                const taskId = card.dataset.taskId;
+                if (taskId && resultsData.has(taskId)) {
+                    const record = resultsData.get(taskId);
+                    record.listId = MAIN_LIST_ID;
+                    updateStoredResult(taskId, { listId: MAIN_LIST_ID });
+                    persistResultMetadataSnapshot(taskId, record);
+                }
+            });
+        }
+        if (listConfig.active === listId) listConfig.active = MAIN_LIST_ID;
+        saveListPreferences();
+        filterResultsView();
+    }
+
+    // Attach auto-save to inputs
+    [promptInput, countInput, resolutionSelect, aspectRatioSelect, enableRetryInput, maxRetriesInput].forEach(el => {
+        el.addEventListener('input', saveSettings);
+        el.addEventListener('change', saveSettings);
+    });
+
+    addApiKeyBtn.addEventListener("click", () => {
+        apiKeyListEl.appendChild(createApiKeyRow());
+    });
+    addListBtn.addEventListener("click", addCustomList);
+    removeListBtn.addEventListener("click", () => {
+        const activeList = listConfig.lists.get(listConfig.active);
+        if (!activeList || activeList.locked) return;
+        removeList(listConfig.active).catch(console.error);
+    });
+    selectFolderBtn.addEventListener("click", handleFolderSelection);
+    rebindFolderBtn.addEventListener("click", () => {
+        workingDirectoryHandle = null;
+        folderAccessGranted = false;
+        resetCardOrderTracking();
+        updateFolderStatusLabel();
+        showFolderOverlay("Please choose a new output directory");
+    });
+    if (importBtn && importInput) {
+        importBtn.addEventListener("click", () => importInput.click());
+        importInput.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length) handleManualImageImport(files);
+            importInput.value = "";
+        });
+    }
+    if (listMoveAllBtn) {
+        listMoveAllBtn.addEventListener("click", handleMoveAllBtnClick);
+    }
+
+    const dropZone = document.getElementById("dropZone");
+    const refInput = document.getElementById("refImages");
+    const pasteRefBtn = document.getElementById("pasteRefBtn");
+    const refImageListEl = document.getElementById("refImageList");
+    const refImageHintEl = document.getElementById("refImageHint");
+    const clearAllRefsBtn = document.getElementById("clearAllRefsBtn");
+
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImage = document.getElementById("lightboxImage");
+    const lightboxClose = document.querySelector(".lightbox-close");
+    if (importConfirmBtn) importConfirmBtn.addEventListener("click", confirmImportDialog);
+    if (importCancelBtn) importCancelBtn.addEventListener("click", () => cancelImportDialog());
+    if (importOverlayEl) {
+        importOverlayEl.addEventListener("click", (e) => {
+            if (e.target === importOverlayEl) cancelImportDialog();
+        });
+    }
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && importOverlayEl && !importOverlayEl.classList.contains("hidden") && importDialogResolver) {
+            cancelImportDialog();
+        }
+    });
+
+    function queueDiskSync() {
+        diskSyncQueued = true;
+        attemptDiskSync();
+    }
+
+    function attemptDiskSync() {
+        if (!diskSyncQueued) return;
+        if (!folderAccessGranted || !workingDirectoryHandle || !dbHydrated) return;
+        diskSyncQueued = false;
+        syncResultsFromDirectory();
+    }
+
+    /* --- Initialization Logic --- */
+    async function initApp() {
+        await ensurePersistentStorage();
+        loadListPreferences();
+        loadSettings();
+        try {
+            const db = await openDB();
+            updateFolderStatusLabel();
+            folderAccessGranted = false;
+            showFolderOverlay("Please choose an output directory");
+            
+            const txRef = db.transaction(STORE_REFS, "readonly");
+            const storeRef = txRef.objectStore(STORE_REFS);
+            const refsReq = storeRef.getAll();
+            refsReq.onsuccess = () => {
+                refImages = refsReq.result || [];
+                renderRefImageList();
+            };
+
+            const txRes = db.transaction(STORE_RESULTS, "readonly");
+            const storeRes = txRes.objectStore(STORE_RESULTS);
+            const resReq = storeRes.getAll();
+            resReq.onsuccess = () => {
+                const savedResults = (resReq.result || []).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                const renderTasks = savedResults.map(item => renderImageCard(
+                    item.taskId,
+                    item.base64,
+                    item.meta || {},
+                    item.prompt,
+                    {
+                        isRestoring: true,
+                        timestamp: item.timestamp || Date.now(),
+                        listId: item.listId || MAIN_LIST_ID,
+                        thumbnail: item.thumbnail
+                    }
+                ));
+                Promise.all(renderTasks)
+                    .catch(err => console.error("Restore render failed", err))
+                    .finally(() => {
+                        applyStoredCardOrder();
+                        filterResultsView();
+                        dbHydrated = true;
+                        attemptDiskSync();
+                    });
+            };
+            resReq.onerror = () => {
+                applyStoredCardOrder();
+                filterResultsView();
+                dbHydrated = true;
+                attemptDiskSync();
+            };
+
+        } catch(e) {
+            console.error("DB Init Error:", e);
+            setTemporaryErrorStatus("Storage initialization failed.");
+            dbHydrated = true;
+            attemptDiskSync();
+        }
+    }
+
+    function updateGlobalStatus() {
+        const runningCount = activeTasks.size;
+        const dot = statusEl.querySelector(".status-dot");
+        const text = statusEl.querySelector("span:nth-child(2)");
+        statusEl.classList.remove("error");
+        dot.className = "status-dot";
+
+        if (runningCount > 0) {
+            dot.classList.add("busy");
+            text.textContent = `PROCESSING (${runningCount})`;
+            cancelAllBtn.style.display = "inline-flex"; 
+            generateBtn.textContent = "🍌 ADD BATCH";
+        } else {
+            dot.classList.add("ok");
+            text.textContent = "READY";
+            cancelAllBtn.style.display = "none"; 
+            generateBtn.textContent = "🍌 INITIALIZE";
+        }
+    }
+    
+    function setTemporaryErrorStatus(msg) {
+        const dot = statusEl.querySelector(".status-dot");
+        const text = statusEl.querySelector("span:nth-child(2)");
+        statusEl.classList.add("error");
+        dot.className = "status-dot error";
+        text.textContent = msg;
+        setTimeout(() => updateGlobalStatus(), 3000);
+    }
+    
+    function updateResultsCount() {
+      const total = resultsEl.querySelectorAll(".result-card:not(.skeleton)").length;
+      const mainCount = resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${MAIN_LIST_ID}"]`).length;
+      const activeCount = resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${listConfig.active}"]`).length;
+      const activeName = listConfig.lists.get(listConfig.active)?.name || "Current";
+      updateMoveAllControl();
+    }
+
+    /* --- Lightbox Logic (Same as before) --- */
+    let lbState = { isZoomed: false, scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0, initialTx: 0, initialTy: 0, dragMoved: false, skipNextClick: false };
+    function resetLightboxState() {
+        lbState = { isZoomed: false, scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0, initialTx:0, initialTy:0, dragMoved: false, skipNextClick: false };
+        lightboxImage.style.transform = `translate(0px, 0px) scale(1)`;
+        lightboxImage.classList.remove("zoomed");
+        lightboxImage.classList.remove("dragging");
+    }
+    function openLightboxWithSrc(src, alt) {
+      if (!src) return;
+      lightboxImage.src = src;
+      lightboxImage.removeAttribute("data-task-id");
+      lightboxImage.alt = alt || "Preview image";
+      resetLightboxState();
+      lightbox.classList.add("visible");
+      lightbox.setAttribute("aria-hidden", "false");
+    }
+
+    async function fetchFullBase64(taskId) {
+        let record = resultsData.get(taskId);
+        if (record && record.base64) return record.base64;
+
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readonly");
+            const item = await new Promise(r => {
+                const req = tx.objectStore(STORE_RESULTS).get(taskId);
+                req.onsuccess = () => r(req.result);
+                req.onerror = () => r(null);
+            });
+            if (item && item.base64) {
+                if (record) record.base64 = item.base64;
+                return item.base64;
+            }
+        } catch(e) { console.warn("DB read skipped", e); }
+
+        if (workingDirectoryHandle) {
+             const meta = record ? record.meta : {};
+             const diskData = await readImagePayloadFromDisk(taskId, meta);
+             if (diskData && diskData.base64) {
+                 if (record) record.base64 = diskData.base64;
+                 return diskData.base64;
+             }
+        }
+        return null;
+    }
+
+    async function openLightboxByTaskId(taskId) {
+        let record = resultsData.get(taskId);
+        if (!record) return;
+
+        const fullBase64 = await fetchFullBase64(taskId);
+        if (!fullBase64) {
+            try {
+                const db = await openDB();
+                const tx = db.transaction(STORE_RESULTS, "readonly");
+                const store = tx.objectStore(STORE_RESULTS);
+                const dbRecord = await new Promise((resolve) => {
+                    const req = store.get(taskId);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
+                if (dbRecord) fullBase64 = dbRecord.base64;
+            } catch (e) {
+                console.error("Failed to load full image", e);
+            }
+        }
+
+        if (!fullBase64) return;
+
+        const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
+        const blob = base64ToBlob(fullBase64, mimeType);
+        const objectUrl = URL.createObjectURL(blob);
+
+        lightboxImage.src = objectUrl;
+        lightboxImage.dataset.taskId = taskId;
+        lightboxImage.dataset.tempUrl = objectUrl; 
+        
+        lightboxImage.alt = "Preview image";
+        resetLightboxState();
+        lightbox.classList.add("visible");
+        lightbox.setAttribute("aria-hidden", "false");
+    }
+    function closeLightbox() {
+        lightbox.classList.remove("visible");
+        lightbox.setAttribute("aria-hidden", "true");
+        
+        setTimeout(() => { 
+            lightboxImage.removeAttribute("data-task-id"); 
+            
+            if (lightboxImage.dataset.tempUrl) {
+                URL.revokeObjectURL(lightboxImage.dataset.tempUrl);
+                lightboxImage.removeAttribute("data-tempUrl");
+            }
+            
+            lightboxImage.src = ""; 
+            resetLightboxState(); 
+        }, 200);
+    }
+    function navigateLightbox(direction) {
+        const wrappers = Array.from(document.querySelectorAll(`#results .result-card:not(.skeleton)[data-list-id="${listConfig.active}"] .thumb-wrap`));
+        if (!wrappers.length) return;
+        const currentId = lightboxImage.dataset.taskId;
+        const currentIndex = wrappers.findIndex(wrap => wrap.dataset.taskId === currentId);
+        if (currentIndex === -1) return;
+        let newIndex = currentIndex + direction;
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= wrappers.length) newIndex = wrappers.length - 1;
+        if (newIndex !== currentIndex) {
+            const target = wrappers[newIndex];
+            if (target?.dataset.taskId) {
+                openLightboxByTaskId(target.dataset.taskId);
+            }
+        }
+    }
+    lightboxImage.addEventListener("mousedown", (e) => {
+        if (!lbState.isZoomed) return;
+        e.preventDefault();
+        lbState.isDragging = true;
+        lbState.startX = e.clientX;
+        lbState.startY = e.clientY;
+        lbState.initialTx = lbState.x;
+        lbState.initialTy = lbState.y;
+        lbState.dragMoved = false;
+        lbState.skipNextClick = false;
+        lightboxImage.classList.add("dragging");
+    });
+    window.addEventListener("mousemove", (e) => {
+        if (lbState.isDragging && lbState.isZoomed) {
+            e.preventDefault();
+            const dx = e.clientX - lbState.startX;
+            const dy = e.clientY - lbState.startY;
+            if (!lbState.dragMoved && (dx !== 0 || dy !== 0)) {
+                lbState.dragMoved = true;
+            }
+            lbState.x = lbState.initialTx + dx;
+            lbState.y = lbState.initialTy + dy;
+            lightboxImage.style.transform = `translate(${lbState.x}px, ${lbState.y}px) scale(${lbState.scale})`;
+        }
+    });
+    window.addEventListener("mouseup", (e) => {
+        if (lbState.isDragging) {
+            lbState.isDragging = false;
+            lightboxImage.classList.remove("dragging");
+            if (lbState.dragMoved && e.target === lightboxImage) {
+                lbState.skipNextClick = true;
+            }
+            lbState.dragMoved = false;
+        }
+    });
+    lightboxImage.addEventListener("click", (e) => {
+        e.stopPropagation(); 
+        if (lbState.skipNextClick) {
+            lbState.skipNextClick = false;
+            return;
+        }
+        if (!lbState.isZoomed) {
+            const rect = lightboxImage.getBoundingClientRect();
+            const clickX = e.clientX;
+            const clickY = e.clientY;
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const offsetX = centerX - clickX;
+            const offsetY = centerY - clickY;
+            const targetScale = 2.5;
+            lbState.x = offsetX * (targetScale - 1); 
+            lbState.y = offsetY * (targetScale - 1);
+            lbState.scale = targetScale;
+            lbState.isZoomed = true;
+            lightboxImage.classList.add("zoomed");
+        } else {
+            lbState.isZoomed = false;
+            lbState.scale = 1;
+            lbState.x = 0;
+            lbState.y = 0;
+            lightboxImage.classList.remove("zoomed");
+        }
+        lbState.dragMoved = false;
+        lightboxImage.style.transform = `translate(${lbState.x}px, ${lbState.y}px) scale(${lbState.scale})`;
+    });
+    lightboxClose.addEventListener("click", closeLightbox);
+    lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target.classList.contains('lightbox-inner')) closeLightbox(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeLightbox();
+      if (lightbox.classList.contains("visible")) {
+          if (e.key === "ArrowLeft") navigateLightbox(-1);
+          if (e.key === "ArrowRight") navigateLightbox(1);
+      }
+    });
+
+    /* --- Reference Image Logic with Persistence --- */
+    function renderRefImageList() {
+      refImageListEl.innerHTML = "";
+      if (!refImages.length) {
+        refImageHintEl.textContent = "No reference data loaded.";
+        return;
+      }
+      refImageHintEl.textContent = `LOADED ${refImages.length} REF IMAGES (MAX ${REF_IMAGE_LIMIT})`;
+
+      refImages.forEach((img) => {
+        const item = document.createElement("div");
+        item.className = "ref-image-item";
+
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "ref-thumb-wrap";
+        const imageEl = document.createElement("img");
+        imageEl.src = `data:${img.mimeType};base64,${img.data}`;
+        imageEl.alt = img.name || "Reference image";
+        thumbWrap.appendChild(imageEl);
+        thumbWrap.addEventListener("click", () => openLightboxWithSrc(imageEl.src, imageEl.alt));
+
+        const meta = document.createElement("div");
+        meta.className = "ref-meta";
+        const nameEl = document.createElement("div");
+        nameEl.className = "ref-name";
+        nameEl.textContent = img.name || "image";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "btn-mini danger";
+        delBtn.textContent = "DEL";
+        delBtn.style.fontSize = "9px";
+        delBtn.style.padding = "2px 4px";
+        delBtn.addEventListener("click", async () => {
+          // Delete from DB
+          const db = await openDB();
+          const tx = db.transaction(STORE_REFS, "readwrite");
+          tx.objectStore(STORE_REFS).delete(img.id);
+          
+          refImages = refImages.filter((r) => r.id !== img.id);
+          renderRefImageList();
+        });
+
+        meta.appendChild(nameEl);
+        meta.appendChild(delBtn);
+        item.appendChild(thumbWrap);
+        item.appendChild(meta);
+        refImageListEl.appendChild(item);
+      });
+    }
+
+    async function addRefImageRaw(base64Data, mimeType, fileName) {
+      const remaining = REF_IMAGE_LIMIT - refImages.length;
+      if (remaining <= 0) {
+        setTemporaryErrorStatus(`LIMIT REACHED (${REF_IMAGE_LIMIT}).`);
+        return false;
+      }
+      const id = String(Date.now()) + "_" + Math.random().toString(36).slice(2);
+      const cleanData = base64Data.replace(/^data:image\/\w+;base64,/, "");
+      
+      const newRef = { id, name: fileName || `img.png`, mimeType: mimeType || "image/png", data: cleanData };
+      refImages.push(newRef);
+      
+      // Save to DB
+      try {
+          const db = await openDB();
+          const tx = db.transaction(STORE_REFS, "readwrite");
+          tx.objectStore(STORE_REFS).put(newRef);
+      } catch(e) { console.error("Ref Save Error", e); }
+
+      renderRefImageList();
+      return true;
+    }
+
+    function addFiles(list) {
+      if (!list || !list.length) return;
+      let addedCount = 0;
+      const remaining = REF_IMAGE_LIMIT - refImages.length;
+      Array.from(list).some((file) => {
+        if (!file.type || !file.type.startsWith("image/")) return false;
+        if (addedCount >= remaining) { setTemporaryErrorStatus(`LIMIT REACHED.`); return true; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          const base64 = String(result).split(",")[1] || "";
+          addRefImageRaw(base64, file.type, file.name);
+        };
+        reader.readAsDataURL(file);
+        addedCount++;
+        return false;
+      });
+    }
+
+    dropZone.addEventListener("click", () => refInput.click());
+    pasteRefBtn.addEventListener("click", async () => {
+        try {
+            const items = await navigator.clipboard.read();
+            let foundImage = false;
+            for (const item of items) {
+                const type = item.types.find(t => t.startsWith('image/'));
+                if (type) {
+                    const blob = await item.getType(type);
+                    const file = new File([blob], "clipboard-image.png", { type });
+                    addFiles([file]);
+                    foundImage = true;
+                }
+            }
+            if (!foundImage) setTemporaryErrorStatus("No image data in clipboard");
+        } catch (err) { console.error(err); setTemporaryErrorStatus("Clipboard access denied"); }
+    });
+    ["dragenter", "dragover"].forEach((evt) => {
+      dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add("active"); });
+    });
+    ["dragleave", "dragend"].forEach((evt) => {
+      dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove("active"); });
+    });
+    dropZone.addEventListener("drop", async (e) => { 
+        e.preventDefault();
+        dropZone.classList.remove("active");
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
+            addFiles(e.dataTransfer.files); 
+            return; 
+        }
+
+        const draggedTaskId = e.dataTransfer.getData("application/x-nano-card-id");
+        if (draggedTaskId) {
+            try {
+                const fullBase64 = await fetchFullBase64(draggedTaskId);
+                if (fullBase64) {
+                    const record = resultsData.get(draggedTaskId);
+                    const mime = record?.meta?.mimeType || "image/png";
+                    addRefImageRaw(fullBase64, mime, `ref_${draggedTaskId}.png`);
+                }
+            } catch (err) {
+                console.error("Failed to load dragged image from DB", err);
+                setTemporaryErrorStatus("Failed to load image reference.");
+            }
+            return;
+        }
+
+        const internalData = e.dataTransfer.getData("application/x-nano-banana-image");
+        if (internalData) {
+            const parts = internalData.split(',');
+            if(parts.length === 2) {
+                const mimeMatch = parts[0].match(/:(.*?);/);
+                const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+                addRefImageRaw(parts[1], mimeType, "result_drop.png");
+            }
+        }
+    });
+    refInput.addEventListener("change", () => {
+      if (refInput.files?.length) addFiles(refInput.files);
+      refInput.value = "";
+    });
+    clearAllRefsBtn.addEventListener("click", async () => {
+      refImages = [];
+      renderRefImageList();
+      const db = await openDB();
+      const tx = db.transaction(STORE_REFS, "readwrite");
+      tx.objectStore(STORE_REFS).clear();
+    });
+
+    /* --- Task Execution & Result Rendering --- */
+    function cancelTask(taskId) {
+        const task = activeTasks.get(taskId);
+        if (task && task.controller) {
+            task.controller.abort(); 
+            activeTasks.delete(taskId);
+            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+            if (card) renderCancelledCard(card, taskId);
+            updateGlobalStatus();
+        }
+    }
+    cancelAllBtn.addEventListener("click", () => {
+        if(activeTasks.size === 0) return;
+        const mainTasks = Array.from(activeTasks.keys()).filter(taskId => {
+            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+            return !card || card.dataset.listId === MAIN_LIST_ID;
+        });
+        mainTasks.forEach(taskId => { cancelTask(taskId); });
+        updateGlobalStatus();
+    });
+
+    function createSkeletonCard(taskId) {
+      const card = document.createElement("div");
+      card.className = "result-card skeleton";
+      card.dataset.taskId = taskId;
+      card.dataset.listId = MAIN_LIST_ID;
+      card.dataset.createdAt = String(Date.now());
+      card.style.display = listConfig.active === MAIN_LIST_ID ? "" : "none";
+      const title = document.createElement("div");
+      title.className = "result-title";
+      const left = document.createElement("span");
+      left.textContent = `TASK_${taskId.split('_')[1]}`; 
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "QUEUED";
+      title.appendChild(left);
+      title.appendChild(badge);
+      const thumb = document.createElement("div");
+      thumb.className = "skeleton-thumb";
+      const line = document.createElement("div");
+      line.className = "skeleton-line";
+      const meta = document.createElement("div");
+      meta.className = "result-meta";
+      const hint = document.createElement("span");
+      hint.className = "status-text";
+      hint.textContent = "INITIALIZING...";
+      meta.appendChild(hint);
+      const footer = document.createElement("div");
+      footer.className = "skeleton-footer";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "btn-mini neutral";
+      cancelBtn.textContent = "ABORT";
+      cancelBtn.onclick = () => cancelTask(taskId);
+      footer.appendChild(cancelBtn);
+      card.appendChild(title);
+      card.appendChild(thumb);
+      card.appendChild(line);
+      card.appendChild(meta);
+      card.appendChild(footer);
+      insertAtResultsTop(card); // New tasks go to top
+      captureOrderFromDom();
+      updateResultsCount();
+      return card;
+    }
+
+    function updateSkeletonStatus(taskId, statusText, badgeText, isRetry = false) {
+        const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+        if (!card) return;
+        const badge = card.querySelector(".badge");
+        const hint = card.querySelector(".status-text");
+        if (badge) {
+            badge.textContent = badgeText;
+            if (isRetry) badge.classList.add("retry");
+            else badge.classList.remove("retry");
+        }
+        if (hint) hint.textContent = statusText;
+    }
+
+    async function renderImageCard(taskId, base64, meta, usedPrompt, options = {}) {
+      const {
+          isRestoring = false,
+          timestamp = Date.now(),
+          listId = MAIN_LIST_ID,
+          thumbnail: storedThumbnail,
+          persistToDb = !isRestoring,
+          skipDiskSave = isRestoring
+      } = options;
+      const safeMeta = meta || {};
+      const mimeType = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
+      const extension = safeMeta.extension || mimeTypeToExtension(mimeType);
+      safeMeta.mimeType = mimeType;
+      safeMeta.extension = extension;
+      let thumbData = storedThumbnail;
+      let didGenerateMissingThumbnail = false;
+      if (!thumbData) {
+          try {
+            if (base64){
+                thumbData = await generateThumbnail(base64, mimeType);
+                didGenerateMissingThumbnail = true;
+            }
+          } catch (err) {
+              console.warn("Thumbnail generation failed", err);
+          }
+      }
+      if (!thumbData && base64) {
+          thumbData = `data:${mimeType};base64,${base64}`;
+      }
+
+      if (persistToDb) {
+          await persistResultRecord({ taskId, base64, meta: safeMeta, prompt: usedPrompt, timestamp, listId, thumbnail: thumbData });
+      }
+
+      resultsData.set(taskId, { 
+        base64: null, 
+        meta: safeMeta, 
+        prompt: usedPrompt, 
+        timestamp, 
+        listId, 
+        thumbnail: thumbData
+        });
+
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.dataset.taskId = taskId;
+      card.dataset.listId = listId;
+      card.dataset.createdAt = String(timestamp);
+      card.draggable = true;
+      card.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("application/x-nano-card-id", taskId);
+          draggingCardId = taskId;
+          e.dataTransfer.setData("application/x-nano-card-sort", taskId);
+          e.dataTransfer.effectAllowed = "move";
+          recordCardDragOrigin(e, card);
+      });
+      card.addEventListener("dragend", () => {
+          draggingCardId = null;
+          clearCardSortHints();
+          clearCardDragOrigin();
+      });
+
+      const title = document.createElement("div");
+      title.className = "result-title";
+      const left = document.createElement("span");
+      left.textContent = `SUCCESS`;
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "200 OK";
+      title.appendChild(left);
+      title.appendChild(badge);
+
+      const thumbWrap = document.createElement("div");
+      thumbWrap.className = "thumb-wrap";
+      thumbWrap.dataset.taskId = taskId;
+      const img = document.createElement("img");
+      let finalSrc = thumbData;
+        if (!finalSrc && base64) {
+            finalSrc = `data:${mimeType};base64,${base64}`;
+        }
+        if (finalSrc) {
+        img.src = finalSrc;
+        } else {
+        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        img.style.backgroundColor = "#fee2e2"; 
+    }
+
+      img.loading = "lazy";
+      img.alt = "Draw result";
+      img.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("application/x-nano-card-id", taskId);
+        e.dataTransfer.setData("application/x-nano-internal-drag", "true"); 
+        draggingCardId = taskId;
+        e.dataTransfer.effectAllowed = "copyMove";
+        const shim = ensureTransparentDragImage();
+        if (shim) {
+            e.dataTransfer.setDragImage(shim, 0, 0);
+        }
+        recordCardDragOrigin(e, card);
+        });
+      img.addEventListener("dragend", () => {
+          if (draggingCardId === taskId) {
+              draggingCardId = null;
+              clearCardSortHints();
+              clearCardDragOrigin();
+          }
+      });
+      thumbWrap.appendChild(img);
+      thumbWrap.addEventListener("click", () => openLightboxByTaskId(taskId));
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "result-meta";
+      const infoDiv = document.createElement("div");
+      infoDiv.style.display = "flex";
+      infoDiv.style.gap = "4px";
+      const resSpan = document.createElement("span");
+      resSpan.textContent = safeMeta.resolution ? `${safeMeta.resolution}` : "";
+      const ratioSpan = document.createElement("span");
+      ratioSpan.textContent = safeMeta.aspectRatio ? `${safeMeta.aspectRatio}` : "Def";
+      infoDiv.appendChild(resSpan);
+      infoDiv.appendChild(ratioSpan);
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "timestamp-badge";
+      timeSpan.textContent = formatTimestamp(timestamp);
+      metaEl.appendChild(infoDiv);
+      metaEl.appendChild(timeSpan);
+
+      const actions = document.createElement("div");
+      actions.className = "result-actions";
+      
+      const reuseBtn = document.createElement("button");
+      reuseBtn.type = "button";
+      reuseBtn.className = "btn-mini info";
+      reuseBtn.textContent = "REUSE";
+      reuseBtn.addEventListener("click", () => {
+          promptInput.value = usedPrompt || "";
+          promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `nano-banana-${taskId}.${extension}`;
+      downloadLink.href = "javascript:void(0)";
+      downloadLink.addEventListener("click", async (e) => {
+            e.preventDefault(); 
+            e.stopPropagation();
+
+            let fullBase64 = resultsData.get(taskId)?.base64;
+
+            if (!fullBase64) return;
+
+            const mime = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
+            downloadLink.href = `data:${mime};base64,${fullBase64}`;
+            
+            const tempLink = document.createElement('a');
+            tempLink.href = `data:${mime};base64,${fullBase64}`;
+            tempLink.download = `nano-banana-${taskId}.${extension}`;
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        });
+      const dlBtn = document.createElement("button");
+      dlBtn.type = "button";
+      dlBtn.className = "btn-mini";
+      dlBtn.textContent = "SAVE";
+      downloadLink.appendChild(dlBtn);
+
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "btn-mini danger";
+      clearBtn.textContent = "DISCARD";
+      clearBtn.addEventListener("click", async () => {
+        card.remove();
+        captureOrderFromDom();
+        const record = resultsData.get(taskId);
+        cleanupResultRecord(taskId);
+        filterResultsView();
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readwrite");
+            tx.objectStore(STORE_RESULTS).delete(taskId);
+        } catch(e) {}
+        if (record) {
+            await deleteResultFiles(taskId, record.meta);
+        }
+      });
+
+      actions.appendChild(reuseBtn);
+      actions.appendChild(downloadLink);
+      actions.appendChild(clearBtn);
+
+      card.appendChild(title);
+      card.appendChild(thumbWrap);
+      card.appendChild(metaEl);
+      card.appendChild(actions);
+
+      const skeleton = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+      if (skeleton) {
+          skeleton.replaceWith(card);
+      } else {
+          insertAtResultsTop(card);
+          if (!isRestoring) captureOrderFromDom();
+      }
+      filterResultsView();
+
+      if (!skipDiskSave) {
+        saveResultToDisk(taskId, base64, mimeType, { 
+            prompt: usedPrompt, 
+            meta: safeMeta, 
+            timestamp, 
+            listId, 
+            taskId, 
+            thumbnail: thumbData
+        }).catch((err) => {
+            console.error("Disk save failed", err);
+            });
+        }
+        if (isRestoring && didGenerateMissingThumbnail) {
+            setTimeout(() => {
+                console.log(`Migrating old file: adding thumbnail to ${taskId}`);
+                persistResultMetadataSnapshot(taskId);
+            }, 500 + Math.random() * 1000); 
+        }
+    }
+
+    function generateThumbnail(base64, mimeType = "image/png") {
+        return new Promise((resolve) => {
+            if (!base64) {
+                resolve(null);
+                return;
+            }
+
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement("canvas");
+                    const maxSize = 320; 
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height = Math.round(height * (maxSize / width));
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width = Math.round(width * (maxSize / height));
+                            height = maxSize;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    const ctx = canvas.getContext("2d");
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high";
+                    
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const dataUrl = canvas.toDataURL("image/webp", 0.8);
+                    resolve(dataUrl);
+                } catch (e) {
+                    console.warn("Thumbnail draw failed", e);
+                    resolve(`data:${mimeType};base64,${base64}`);
+                }
+            };
+
+            img.onerror = () => {
+                console.warn("Thumbnail load failed");
+                resolve(null);
+            };
+            img.src = `data:${mimeType};base64,${base64}`;
+        });
+    }
+
+    function formatTimestamp(ts) {
+        const date = new Date(ts || Date.now());
+        const pad = (n) => n.toString().padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function getFullImageDataUrl(taskId) {
+        const record = resultsData.get(taskId);
+        if (!record?.base64) return null;
+        const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
+        return `data:${mimeType};base64,${record.base64}`;
+    }
+
+    function mimeTypeToExtension(mimeType = DEFAULT_IMAGE_MIME) {
+        if (!mimeType) return "img";
+        const normalized = mimeType.toLowerCase();
+        if (normalized.includes("png")) return "png";
+        if (normalized.includes("jpeg")) return "jpg";
+        if (normalized.includes("jpg")) return "jpg";
+        if (normalized.includes("webp")) return "webp";
+        if (normalized.includes("gif")) return "gif";
+        if (normalized.includes("bmp")) return "bmp";
+        const parts = normalized.split("/");
+        return parts[1] || "img";
+    }
+
+    function extensionToMimeType(extension) {
+        if (!extension) return DEFAULT_IMAGE_MIME;
+        const normalized = extension.toLowerCase().replace(/^\./, "");
+        if (normalized === "png") return "image/png";
+        if (normalized === "jpg" || normalized === "jpeg") return "image/jpeg";
+        if (normalized === "webp") return "image/webp";
+        if (normalized === "gif") return "image/gif";
+        if (normalized === "bmp") return "image/bmp";
+        return DEFAULT_IMAGE_MIME;
+    }
+
+    function base64ToBlob(base64, mimeType = "image/png") {
+        const binary = atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return new Blob([bytes], { type: mimeType });
+    }
+
+    function getOrCreateObjectUrl(taskId) {
+        const record = resultsData.get(taskId);
+        if (!record?.base64) return null;
+        const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
+        if (!record.objectUrl) {
+            record.objectUrl = URL.createObjectURL(base64ToBlob(record.base64, mimeType));
+        }
+        return record.objectUrl;
+    }
+
+    function cleanupResultRecord(taskId) {
+        const record = resultsData.get(taskId);
+        if (record?.objectUrl) {
+            URL.revokeObjectURL(record.objectUrl);
+        }
+        resultsData.delete(taskId);
+    }
+
+    async function updateStoredResult(taskId, patch) {
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readwrite");
+            const store = tx.objectStore(STORE_RESULTS);
+            await new Promise((resolve, reject) => {
+                const req = store.get(taskId);
+                req.onsuccess = () => {
+                    const current = req.result;
+                    if (!current) return resolve();
+                    store.put({ ...current, ...patch });
+                    resolve();
+                };
+                req.onerror = () => reject(req.error);
+            });
+        } catch (err) {
+            console.warn("Update result failed", err);
+        }
+    }
+
+    async function writeMetadataFile(taskId, payload) {
+        const fileBase = `nano-${taskId}`;
+        const metaHandle = await workingDirectoryHandle.getFileHandle(`${fileBase}.json`, { create: true });
+        const writableMeta = await metaHandle.createWritable();
+        await writableMeta.write(JSON.stringify(payload, null, 2));
+        await writableMeta.close();
+    }
+
+    async function saveResultToDisk(taskId, base64, mimeType, payload) {
+        if (!folderAccessGranted || !workingDirectoryHandle) {
+            showFolderOverlay();
+            return;
+        }
+        try {
+            const fileBase = `nano-${taskId}`;
+            const extension = mimeTypeToExtension(mimeType);
+            const imageHandle = await workingDirectoryHandle.getFileHandle(`${fileBase}.${extension}`, { create: true });
+            const writableImg = await imageHandle.createWritable();
+            await writableImg.write(base64ToBlob(base64, mimeType));
+            await writableImg.close();
+            await writeMetadataFile(taskId, payload);
+        } catch (err) {
+            handleFolderAccessError("Save failed, please re-authorize");
+            throw err;
+        }
+    }
+
+    async function persistResultMetadataSnapshot(taskId, recordOverride = null) {
+        if (!folderAccessGranted || !workingDirectoryHandle) return;
+        const record = recordOverride || resultsData.get(taskId);
+        if (!record) return;
+        let thumbData = record.thumbnail;
+        if (!thumbData) {
+            const imgEl = document.querySelector(`.result-card[data-task-id="${taskId}"] img`);
+            if (imgEl) thumbData = imgEl.src;
+        }
+        const payload = {
+            prompt: record.prompt || "",
+            meta: record.meta || {},
+            timestamp: record.timestamp || Date.now(),
+            listId: record.listId || MAIN_LIST_ID,
+            taskId,
+            thumbnail: thumbData
+        };
+        try {
+            await writeMetadataFile(taskId, payload);
+        } catch (err) {
+            if (err?.name === "NotAllowedError") {
+                handleFolderAccessError("Re-authorize the output directory");
+            } else {
+                console.warn("Metadata sync failed", err);
+            }
+        }
+    }
+
+    async function deleteResultFiles(taskId, meta = {}) {
+        if (!folderAccessGranted || !workingDirectoryHandle || typeof workingDirectoryHandle.removeEntry !== "function") return;
+        const fileBase = `nano-${taskId}`;
+        const targets = new Set([`${fileBase}.json`]);
+        if (meta?.extension) {
+            targets.add(`${fileBase}.${meta.extension}`);
+        } else {
+            DISK_IMAGE_EXTENSIONS.forEach(ext => targets.add(`${fileBase}.${ext}`));
+        }
+        for (const name of targets) {
+            try {
+                await workingDirectoryHandle.removeEntry(name);
+            } catch (err) {
+                if (err?.name === "NotFoundError") continue;
+                if (err?.name === "NotAllowedError") {
+                    handleFolderAccessError("Re-authorize the output directory");
+                    break;
+                }
+                console.warn(`Failed to delete file: ${name}`, err);
+            }
+        }
+    }
+
+    function isResultMetadataFile(name = "") {
+        const lower = name.toLowerCase();
+        return lower.startsWith("nano-") && lower.endsWith(".json");
+    }
+
+    function extractTaskIdFromFileName(name = "") {
+        return name.replace(/\.json$/i, "").replace(/^nano-/, "");
+    }
+
+    function buildCandidateExtensions(primary) {
+        const candidates = [];
+        const normalized = (primary || "").replace(/^\./, "");
+        if (normalized) candidates.push(normalized);
+        DISK_IMAGE_EXTENSIONS.forEach(ext => {
+            if (!candidates.some(item => item.toLowerCase() === ext)) {
+                candidates.push(ext);
+            }
+        });
+        return candidates;
+    }
+
+    async function readImagePayloadFromDisk(taskId, storedMeta = {}) {
+        if (!workingDirectoryHandle) return null;
+        const baseName = `nano-${taskId}`;
+        const candidates = buildCandidateExtensions(storedMeta?.extension);
+        for (const ext of candidates) {
+            try {
+                const fileHandle = await workingDirectoryHandle.getFileHandle(`${baseName}.${ext}`);
+                const file = await fileHandle.getFile();
+                const base64 = await blobToBase64Async(file);
+                const mimeType = file.type || storedMeta?.mimeType || extensionToMimeType(ext);
+                return {
+                    base64,
+                    meta: { ...(storedMeta || {}), mimeType, extension: ext }
+                };
+            } catch (err) {
+                if (err?.name === "NotFoundError") continue;
+                if (err?.name === "NotAllowedError") {
+                    handleFolderAccessError("Re-authorize access to the output directory");
+                    return null;
+                }
+                console.warn("Failed to read local image", err);
+            }
+        }
+        return null;
+    }
+
+    async function readResultFromDisk(jsonHandle, fileName) {
+        try {
+            const file = await jsonHandle.getFile();
+            const text = await file.text();
+            if (!text.trim()) return null;
+            const payload = JSON.parse(text || "{}");
+            const taskId = payload?.taskId || extractTaskIdFromFileName(fileName);
+            
+            if (!taskId) return null;
+            if (resultsData.has(taskId) && !activeTasks.has(taskId)) return null;
+            
+            let base64 = null;
+            let meta = payload.meta || {};
+            let thumbnail = payload.thumbnail;
+
+            const isThumbnailValid = thumbnail && 
+                                 typeof thumbnail === "string" && 
+                                 thumbnail.startsWith("data:image") && 
+                                 thumbnail.length > 1000;
+
+            if (!isThumbnailValid) {
+                console.log(`Discarding empty/tiny thumbnail for ${taskId}, fallback to source...`);
+                const imagePayload = await readImagePayloadFromDisk(taskId, payload?.meta);
+                if (!imagePayload) return null;
+                base64 = imagePayload.base64;
+                meta = imagePayload.meta;
+                thumbnail = null;
+            }
+
+            return {
+                taskId,
+                base64: base64,
+                meta: meta,
+                prompt: payload?.prompt || "",
+                timestamp: payload?.timestamp || Date.now(),
+                listId: payload?.listId || MAIN_LIST_ID,
+                thumbnail: thumbnail
+            };
+        } catch (err) {
+            console.warn("Failed to parse local records", err);
+            return null;
+        }
+    }
+
+    async function syncResultsFromDirectory() {
+        if (!folderAccessGranted || !workingDirectoryHandle || typeof workingDirectoryHandle.entries !== "function") return;
+        if (diskSyncPromise) return diskSyncPromise;
+
+        diskSyncPromise = (async () => {
+
+            await loadCardOrderFromDisk(true);
+            
+            let imported = 0;
+            const foundListIds = new Set(); 
+            if (listConfig.lists.has(MAIN_LIST_ID)) foundListIds.add(MAIN_LIST_ID);
+
+            try {
+                for await (const [name, handle] of workingDirectoryHandle.entries()) {
+                    if (handle?.kind !== "file") continue;
+                    if (!isResultMetadataFile(name)) continue;
+                    
+                    const record = await readResultFromDisk(handle, name);
+                    if (!record) continue;
+
+                    if (record.listId) {
+                        foundListIds.add(record.listId);
+                    }
+
+                    await renderImageCard(record.taskId, record.base64, record.meta, record.prompt, {
+                        isRestoring: true,
+                        timestamp: record.timestamp,
+                        listId: record.listId,
+                        persistToDb: true,
+                        skipDiskSave: true,
+                        thumbnail: record.thumbnail
+                    });
+                    imported++;
+                }
+
+                let configChanged = false;
+                foundListIds.forEach(id => {
+                    if (!listConfig.lists.has(id)) {
+                        const newName = id.startsWith('list_') 
+                            ? `Recovered List ${id.slice(-4)}`
+                            : `List ${id}`; 
+                        
+                        listConfig.lists.set(id, { id, name: newName, locked: false });
+                        configChanged = true;
+                    }
+                });
+                
+                if (configChanged) {
+                    saveListPreferences();
+                    renderListTabs();
+                }
+
+                if (imported) {
+                    applyStoredCardOrder();
+                    filterResultsView();
+                }
+            } catch (err) {
+                console.warn("Failed to read output directory", err);
+                setTemporaryErrorStatus("Failed to read directory, please re-authorize.");
+            } finally {
+                diskSyncPromise = null;
+            }
+        })();
+        return diskSyncPromise;
+    }
+    
+    function renderCancelledCard(cardElement, taskId) {
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.style.opacity = "0.7";
+      card.dataset.taskId = taskId;
+      const listId = cardElement?.dataset?.listId || MAIN_LIST_ID;
+      card.dataset.listId = listId;
+      card.dataset.createdAt = String(Date.now());
+      const title = document.createElement("div");
+      title.className = "result-title";
+      title.innerHTML = `<span>ABORTED</span><span class="badge cancel">CANCEL</span>`;
+      const msg = document.createElement("div");
+      msg.className = "small-text";
+      msg.textContent = "Task terminated by user.";
+      const footer = document.createElement("div");
+      footer.className = "result-actions";
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "btn-mini danger";
+      removeBtn.textContent = "REMOVE";
+      removeBtn.onclick = () => { card.remove(); updateResultsCount(); captureOrderFromDom(); };
+      footer.appendChild(removeBtn);
+      card.appendChild(title);
+      card.appendChild(msg);
+      card.appendChild(footer);
+      cardElement.replaceWith(card);
+      filterResultsView();
+    }
+
+    function renderErrorCard(taskId, error, canRetryFunc) {
+      const skeleton = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+      if (!skeleton) return;
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.dataset.taskId = taskId;
+      const listId = skeleton.dataset.listId || MAIN_LIST_ID;
+      card.dataset.listId = listId;
+      card.dataset.createdAt = String(Date.now());
+      const title = document.createElement("div");
+      title.className = "result-title";
+      const left = document.createElement("span");
+      left.textContent = `FAILURE`;
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.style.background = "#fee2e2";
+      badge.style.color = "#b91c1c";
+      badge.textContent = "ERR";
+      title.appendChild(left);
+      title.appendChild(badge);
+      const msg = document.createElement("div");
+      msg.className = "small-text";
+      msg.style.color = "#b91c1c";
+      msg.style.wordBreak = "break-all";
+      msg.textContent = error?.message || "Unknown Error";
+      const footer = document.createElement("div");
+      footer.className = "result-actions";
+      if (canRetryFunc) {
+          const retryBtn = document.createElement("button");
+          retryBtn.type = "button";
+          retryBtn.className = "btn-mini";
+          retryBtn.textContent = "RETRY";
+          retryBtn.addEventListener("click", () => {
+            card.remove();
+            updateResultsCount();
+            captureOrderFromDom();
+            canRetryFunc(); 
+          });
+          footer.appendChild(retryBtn);
+      }
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn-mini danger";
+      removeBtn.textContent = "DISCARD";
+      removeBtn.addEventListener("click", () => {
+        card.remove();
+        updateResultsCount();
+        captureOrderFromDom();
+      });
+      footer.appendChild(removeBtn);
+      card.appendChild(title);
+      card.appendChild(msg);
+      card.appendChild(footer);
+      skeleton.replaceWith(card);
+      filterResultsView();
+    }
+
+    /* --- Generation Logic --- */
+    function buildParts(promptText, images) {
+      const parts = [];
+      if (promptText.trim()) parts.push({ text: promptText.trim() });
+      if (images && images.length) {
+        images.slice(0, REF_IMAGE_LIMIT).forEach((img) => {
+          parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
+        });
+      }
+      return parts;
+    }
+
+    function normalizeResourceUrl(resource = "") {
+        if (!resource) return null;
+        if (/^https?:\/\//i.test(resource)) return resource;
+        const trimmed = resource.replace(/^\/+/, "");
+        if (trimmed.startsWith("v1beta/")) {
+            return `https://generativelanguage.googleapis.com/${trimmed}`;
+        }
+        return `https://generativelanguage.googleapis.com/v1beta/${trimmed}`;
+    }
+
+    function ensureAltMedia(url) {
+        if (!url) return null;
+        if (url.includes("alt=media")) return url;
+        const separator = url.includes("?") ? "&" : "?";
+        return `${url}${separator}alt=media`;
+    }
+
+    function blobToBase64Async(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(reader.error);
+            reader.onloadend = () => {
+                const result = reader.result;
+                if (typeof result === "string") {
+                    resolve(result.split(",")[1] || "");
+                } else {
+                    resolve("");
+                }
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    function resetImportDialogFields() {
+        if (importPromptInput) importPromptInput.value = "";
+        if (importResolutionInput) importResolutionInput.value = "";
+        if (importAspectInput) importAspectInput.value = "";
+        if (importFilenameEl) importFilenameEl.textContent = "Awaiting file selection";
+        if (importPreviewImg) {
+            importPreviewImg.removeAttribute("src");
+            importPreviewImg.style.display = "none";
+        }
+    }
+
+    function resolveImportDialog(result) {
+        if (importOverlayEl) {
+            importOverlayEl.classList.add("hidden");
+            importOverlayEl.setAttribute("aria-hidden", "true");
+        }
+        const resolver = importDialogResolver;
+        importDialogResolver = null;
+        if (resolver) resolver(result);
+        resetImportDialogFields();
+    }
+
+    function confirmImportDialog() {
+        if (!importDialogResolver) {
+            if (importOverlayEl) {
+                importOverlayEl.classList.add("hidden");
+                importOverlayEl.setAttribute("aria-hidden", "true");
+            }
+            resetImportDialogFields();
+            return;
+        }
+        resolveImportDialog({
+            prompt: importPromptInput?.value || "",
+            resolution: importResolutionInput?.value || "",
+            aspectRatio: importAspectInput?.value || ""
+        });
+    }
+
+    function cancelImportDialog() {
+        if (!importDialogResolver) {
+            if (importOverlayEl) {
+                importOverlayEl.classList.add("hidden");
+                importOverlayEl.setAttribute("aria-hidden", "true");
+            }
+            resetImportDialogFields();
+            return;
+        }
+        resolveImportDialog(null);
+    }
+
+    function openImportDialog(payload = {}) {
+        if (!importOverlayEl) {
+            return Promise.resolve({
+                prompt: "",
+                resolution: payload?.defaults?.resolution || "",
+                aspectRatio: payload?.defaults?.aspectRatio || ""
+            });
+        }
+        importOverlayEl.classList.remove("hidden");
+        importOverlayEl.setAttribute("aria-hidden", "false");
+        if (importFilenameEl) importFilenameEl.textContent = payload?.fileName || "Imported Image";
+        if (importPreviewImg) {
+            if (payload?.previewUrl) {
+                importPreviewImg.src = payload.previewUrl;
+                importPreviewImg.style.display = "";
+            } else {
+                importPreviewImg.removeAttribute("src");
+                importPreviewImg.style.display = "none";
+            }
+        }
+        if (importPromptInput) importPromptInput.value = payload?.defaults?.prompt || "";
+        if (importResolutionInput) importResolutionInput.value = payload?.defaults?.resolution || "";
+        if (importAspectInput) importAspectInput.value = payload?.defaults?.aspectRatio || "";
+        setTimeout(() => importPromptInput?.focus(), 0);
+        return new Promise((resolve) => {
+            importDialogResolver = resolve;
+        });
+    }
+
+    function getFileExtensionFromName(name = "") {
+        const match = /\.([^.]+)$/.exec(name || "");
+        return match ? match[1].toLowerCase() : "";
+    }
+
+    function isImageFileCandidate(file) {
+        if (!file) return false;
+        if (file.type && file.type.startsWith("image/")) return true;
+        const ext = getFileExtensionFromName(file.name);
+        return DISK_IMAGE_EXTENSIONS.some(candidate => candidate.toLowerCase() === ext);
+    }
+
+    function formatAspectRatioFromSize(width, height) {
+        if (!width || !height) return "";
+        const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+        const divisor = gcd(width, height) || 1;
+        const w = Math.round(width / divisor);
+        const h = Math.round(height / divisor);
+        return `${w}:${h}`;
+    }
+
+    function readImageDimensions(file) {
+        return new Promise((resolve) => {
+            try {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    resolve({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(null);
+                };
+                img.src = url;
+            } catch (err) {
+                console.warn("Failed to read image dimensions", err);
+                resolve(null);
+            }
+        });
+    }
+
+    async function importSingleFile(file) {
+        try {
+            const base64 = await blobToBase64Async(file);
+            if (!base64) throw new Error("Failed to read image");
+            const dims = await readImageDimensions(file);
+            const defaults = {
+                resolution: dims ? `${dims.width}x${dims.height}` : "",
+                aspectRatio: dims ? formatAspectRatioFromSize(dims.width, dims.height) : ""
+            };
+            const previewUrl = URL.createObjectURL(file);
+            let dialogResult = null;
+            try {
+                dialogResult = await openImportDialog({
+                    fileName: file.name || "Imported Image",
+                    previewUrl,
+                    defaults
+                });
+            } finally {
+                URL.revokeObjectURL(previewUrl);
+            }
+            if (dialogResult === null) return "cancelled";
+            const mimeType = file.type || extensionToMimeType(getFileExtensionFromName(file.name));
+            const extension = getFileExtensionFromName(file.name) || mimeTypeToExtension(mimeType);
+            const meta = {
+                resolution: dialogResult.resolution?.trim() || defaults.resolution || "",
+                aspectRatio: dialogResult.aspectRatio?.trim() || defaults.aspectRatio || "",
+                mimeType,
+                extension,
+                source: "import",
+                originalName: file.name || ""
+            };
+            const promptNote = dialogResult.prompt?.trim() || "";
+            const taskId = `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            await renderImageCard(taskId, base64, meta, promptNote, { listId: listConfig.active });
+            return "success";
+        } catch (err) {
+            console.error("Import image failed", err);
+            setTemporaryErrorStatus(err?.message || "Import failed");
+            return "failed";
+        }
+    }
+
+    async function handleManualImageImport(fileList = []) {
+        const files = Array.from(fileList || []).filter(isImageFileCandidate);
+        if (!files.length) {
+            setTemporaryErrorStatus("Please choose an image file to import");
+            return;
+        }
+        for (const file of files) {
+            const result = await importSingleFile(file);
+            if (result === "cancelled") break;
+        }
+    }
+
+    async function fetchFileUriAsBase64(resource, apiKey) {
+        const normalized = normalizeResourceUrl(resource);
+        if (!normalized) return null;
+        const url = ensureAltMedia(normalized);
+        const resp = await fetch(url, {
+            headers: { "x-goog-api-key": apiKey }
+        });
+        if (!resp.ok) {
+            throw new Error(`File download failed: HTTP ${resp.status}`);
+        }
+        const blob = await resp.blob();
+        return blobToBase64Async(blob);
+    }
+
+    async function extractImagePayloadFromParts(parts, apiKey) {
+        if (!Array.isArray(parts)) return null;
+        for (const part of parts) {
+            if (!part) continue;
+            const inline = part.inlineData || part.inline_data;
+            if (inline?.data) {
+                return { base64: inline.data, mimeType: inline.mimeType || inline.mime_type || DEFAULT_IMAGE_MIME };
+            }
+            const media = part.media;
+            if (media?.data) {
+                return { base64: media.data, mimeType: media.mimeType || DEFAULT_IMAGE_MIME };
+            }
+            const fileData = part.fileData || part.file_data || media;
+            if (fileData?.fileUri || fileData?.file_uri || fileData?.resourceName || fileData?.resource_name) {
+                const fileUri = fileData.fileUri || fileData.file_uri || fileData.resourceName || fileData.resource_name;
+                try {
+                    const base64 = await fetchFileUriAsBase64(fileUri, apiKey);
+                    if (base64) {
+                        return { base64, mimeType: fileData.mimeType || fileData.mime_type || media?.mimeType || DEFAULT_IMAGE_MIME };
+                    }
+                } catch (downloadErr) {
+                    console.warn("Failed to download generated image", downloadErr);
+                    throw downloadErr;
+                }
+            }
+        }
+        return null;
+    }
+
+    function extractResponseMessage(parts, data) {
+        if (Array.isArray(parts)) {
+            const textPart = parts.find((p) => typeof p?.text === "string" && p.text.trim());
+            if (textPart?.text) return textPart.text.trim();
+        }
+        const promptFeedback = data?.promptFeedback || data?.prompt_feedback;
+        if (promptFeedback?.blockReason || promptFeedback?.block_reason) {
+            return `Blocked: ${promptFeedback.blockReason || promptFeedback.block_reason}`;
+        }
+        if (promptFeedback?.safetyRatings?.length) {
+            const categories = promptFeedback.safetyRatings.map((item) => item.category || item.name).filter(Boolean);
+            if (categories.length) {
+                return `Blocked (${categories.join(", ")})`;
+            }
+        }
+        return "";
+    }
+
+    function wait(ms, signal) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => resolve(), ms);
+            if (signal) {
+                signal.addEventListener('abort', () => {
+                    clearTimeout(timer);
+                    reject(new DOMException('Aborted', 'AbortError'));
+                });
+            }
+        });
+    }
+
+    function getBackoffDelayMs(attemptNumber) {
+        if (!attemptNumber || attemptNumber < 1) attemptNumber = 1;
+        const seconds = Math.min(64, Math.pow(2, attemptNumber - 1));
+        const baseMs = seconds * 1000;
+        const jitter = Math.floor(Math.random() * 1001); // 0-1000ms jitter
+        return baseMs + jitter;
+    }
+
+    function isRetryableError(err) {
+        if (!err) return false;
+        if (err.isRetryable) return true;
+        if (err.name === "TypeError" && err.message === "Failed to fetch") return true;
+        const message = (err.message || "").toLowerCase();
+        return (
+        message.includes("networkerror") || 
+        message.includes("failed to fetch") || 
+        message.includes("network request failed") ||
+        message.includes("connection refused")
+       );
+    }
+
+    async function executeTask(taskId, config) {
+        let { apiKey, prompt, refImagesSnapshot, resolution, aspectRatio, enableRetry, maxRetries } = config;
+        const controller = new AbortController();
+        activeTasks.set(taskId, { controller });
+        updateGlobalStatus();
+
+        let attempts = 0;
+        const totalAttempts = enableRetry ? (1 + maxRetries) : 1;
+        let requestBody = null;
+
+        try {
+            const parts = buildParts(prompt, refImagesSnapshot);
+            const generationConfig = {
+                imageConfig: { imageSize: resolution },
+                responseModalities: ["TEXT", "IMAGE"],
+            };
+            if (aspectRatio) generationConfig.imageConfig.aspectRatio = aspectRatio;
+            requestBody = JSON.stringify({
+                contents: [{ role: "user", parts }],
+                generationConfig,
+            });
+        } catch (e) {
+            renderErrorCard(taskId, e, null);
+            activeTasks.delete(taskId);
+            updateGlobalStatus();
+            return;
+        }
+
+        while (attempts < totalAttempts) {
+            if (controller.signal.aborted) break;
+            attempts++;
+            const isRetrying = attempts > 1;
+            const statusText = isRetrying ? `Retrying attempt ${attempts}...` : "Generating content...";
+            updateSkeletonStatus(
+                taskId, 
+                statusText,
+                isRetrying ? `RETRY ${attempts-1}` : "RUNNING",
+                isRetrying
+            );
+
+            try {
+                const resp = await fetch(
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+                        body: requestBody,
+                        signal: controller.signal
+                    }
+                );
+                if (!resp.ok) {
+                    let detail = "";
+                    try { const errJson = await resp.json(); detail = errJson.error?.message || JSON.stringify(errJson); } 
+                    catch { detail = resp.statusText; }
+                    const httpError = new Error(`HTTP ${resp.status}: ${detail}`);
+                    const is429 = resp.status === 429;
+                    const is5xx = resp.status >= 500 && resp.status < 600;
+                    httpError.isRetryable = is429 || is5xx;
+                    httpError.statusCode = resp.status;
+                    throw httpError;
+                }
+                const data = await resp.json();
+                const candidate = (data.candidates && data.candidates[0]) || data;
+                const partsOut = (candidate.content && candidate.content.parts) || candidate.parts || [];
+                const imagePayload = await extractImagePayloadFromParts(partsOut, apiKey);
+                if (!imagePayload?.base64) {
+                    const reason = extractResponseMessage(partsOut, data) || "No image data found in response.";
+                    throw new Error(reason);
+                }
+                renderImageCard(
+                    taskId,
+                    imagePayload.base64,
+                    { resolution, aspectRatio, mimeType: imagePayload.mimeType || DEFAULT_IMAGE_MIME },
+                    prompt,
+                    { timestamp: Date.now(), listId: MAIN_LIST_ID }
+                );
+                break; 
+            } catch (err) {
+                if (err.name === 'AbortError') break;
+                const canRetry = attempts < totalAttempts && isRetryableError(err);
+                if (canRetry) {
+                    apiKey = apiKeyManager.getNextKey() || apiKey;
+                    const delay = getBackoffDelayMs(attempts);
+                    let remaining = delay;
+                    while (remaining > 0) {
+                        if (controller.signal.aborted) break;
+                        updateSkeletonStatus(taskId, `Failed (${err.message}). Retrying in ${Math.ceil(remaining/1000)}s...`, "WAITING", true);
+                        const step = Math.min(1000, remaining);
+                        try { await wait(step, controller.signal); } catch (waitErr) { if (waitErr.name === 'AbortError') break; }
+                        remaining -= step;
+                    }
+                    if (controller.signal.aborted) break;
+                } else {
+                    renderErrorCard(taskId, err, () => {
+                        const newId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                        createSkeletonCard(newId);
+                        executeTask(newId, config);
+                    });
+                    break;
+                }
+            }
+        }
+        activeTasks.delete(taskId);
+        updateGlobalStatus();
+    }
+
+    generateBtn.addEventListener("click", () => {
+      const prompt = promptInput.value || "";
+      if (!prompt.trim() && !refImages.length) { setTemporaryErrorStatus("Prompt or reference image required."); return; }
+      const keys = getApiKeyValues();
+      if (!keys.length) { setTemporaryErrorStatus("Please enter at least one API Key."); return; }
+      apiKeyManager.setKeys(keys);
+      if (!requireFolderAccess()) { setTemporaryErrorStatus("Please authorize the output directory first."); return; }
+
+      const count = Number(countInput.value || "1");
+      const resolution = resolutionSelect.value;
+      const aspectRatio = aspectRatioSelect.value;
+      const enableRetry = enableRetryInput.checked;
+      const maxRetries = Number(maxRetriesInput.value || 5);
+
+      const configSnapshot = { prompt, refImagesSnapshot: [...refImages], resolution, aspectRatio, enableRetry, maxRetries };
+
+      for (let i = 0; i < count; i++) {
+          const apiKey = apiKeyManager.getNextKey();
+          if (!apiKey) { setTemporaryErrorStatus("API key rotation failed"); break; }
+          const taskId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          createSkeletonCard(taskId);
+          executeTask(taskId, { ...configSnapshot, apiKey }).catch(console.error);
+      }
+      updateGlobalStatus();
+    });
+
+    clearResultsBtn.addEventListener("click", async () => {
+          const completedCards = Array.from(resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${MAIN_LIST_ID}"]`));
+          if (!completedCards.length) return;
+          const ids = completedCards.map(card => card.dataset.taskId).filter(Boolean);
+          const deleteTargets = ids.map(id => ({ id, meta: resultsData.get(id)?.meta }));
+          completedCards.forEach(card => {
+              const taskId = card.dataset.taskId;
+              card.remove();
+              if (taskId) cleanupResultRecord(taskId);
+          });
+          captureOrderFromDom();
+          filterResultsView();
+          try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readwrite");
+            const store = tx.objectStore(STORE_RESULTS);
+            ids.forEach(id => store.delete(id));
+          } catch(e) { console.error(e); }
+          await Promise.all(deleteTargets.map(({ id, meta }) => deleteResultFiles(id, meta)));
+    });
+
+    // --- NEW RESET LOGIC ---
+    resetAppBtn.addEventListener("click", async () => {
+        if(confirm("⚠️ DANGER ZONE ⚠️\n\nThis will delete:\n1. API Key & Settings\n2. All Generated Images\n3. All Reference Images\n\nThe app will reset to factory state.")) {
+            // 1. Clear Storage
+            localStorage.clear();
+            sessionStorage.clear();
+            resetCardOrderTracking();
+
+            // 2. Close DB connection if open to prevent blocking
+            if (dbInstance) {
+                dbInstance.close();
+                dbInstance = null;
+            }
+
+            // 3. Delete IndexedDB
+            const req = indexedDB.deleteDatabase(DB_NAME);
+            req.onsuccess = () => {
+                window.location.reload();
+            };
+            req.onerror = () => {
+                alert("Failed to delete database. Please clear browser data manually.");
+                window.location.reload();
+            };
+            req.onblocked = () => {
+                // Force reload if still blocked
+                window.location.reload();
+            }
+        }
+    });
+
+    // Run Start
+    initApp();
+  </script>
+</body>
+</html>
