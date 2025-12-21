@@ -541,6 +541,45 @@
     }
     .results-drop-hint span { display: block; font-size: 11px; font-weight: 500; color: #94a3b8; margin-top: 6px; }
     .results-drop-hint.visible { display: flex; }
+    .results-load-more {
+      margin: 16px 0 8px;
+      padding: 12px;
+      border: 1px dashed var(--panel-border);
+      border-radius: var(--radius-panel);
+      background: rgba(248, 250, 252, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .results-load-more.hidden { display: none; }
+    .load-more-btn {
+      border: none;
+      border-radius: var(--radius-btn);
+      padding: 8px 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-accent);
+      background: linear-gradient(120deg, #fef3c7, #fde68a);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .load-more-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(249, 115, 22, 0.35); }
+    .load-more-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .load-more-hint {
+      font-size: 11px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
 
     .list-move-card {
       border-radius: 8px;
@@ -1190,6 +1229,10 @@
             </div>
             <div class="list-move-card-hint" id="listMoveAllHint">No tasks in the current list</div>
           </div>
+          <div id="resultsLoadMore" class="results-load-more hidden">
+            <button id="loadMoreBtn" type="button" class="load-more-btn">LOAD HISTORY</button>
+            <div id="loadMoreHint" class="load-more-hint">History loads in batches to protect memory</div>
+          </div>
         </div>
       </div>
       <input type="file" id="importInput" accept="image/*" multiple style="display:none;" />
@@ -1206,13 +1249,16 @@
   <script>
     /* --- Storage & Persistence System (IndexedDB + LocalStorage) --- */
     const DB_NAME = "NanoBananaDB";
-    const DB_VERSION = 3;
+    const DB_VERSION = 4;
     const STORE_RESULTS = "results";
     const STORE_REFS = "refs";
+    const STORE_PAYLOADS = "resultPayloads";
     const LIST_STORAGE_KEY = "nano_banana_lists";
     const CARD_ORDER_FILE = "_card-order.json";
     const MAIN_LIST_ID = "main";
     const DIR_PICKER_ID = "nano-banana-workspace";
+    const RESULT_TIMESTAMP_INDEX = "byTimestamp";
+    const RESULT_PAGE_SIZE = 40;
 
     // Initialize IndexedDB
     let dbInstance = null;
@@ -1244,6 +1290,11 @@
         lists: new Map([[MAIN_LIST_ID, { id: MAIN_LIST_ID, name: "Main", locked: true }]])
     };
     let listConfigDirty = false;
+    let restoreCursorKey = null;
+    let restoreCursorUsingIndex = null;
+    let restoreLoading = false;
+    let restoreExhausted = false;
+    let restoredResultCount = 0;
 
     function openDB() {
         if (dbInstance) return Promise.resolve(dbInstance);
@@ -1251,11 +1302,39 @@
             const request = indexedDB.open(DB_NAME, DB_VERSION);
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
+                const upgradeTx = e.target.transaction;
+                let resultsStore;
                 if (!db.objectStoreNames.contains(STORE_RESULTS)) {
-                    db.createObjectStore(STORE_RESULTS, { keyPath: "taskId" });
+                    resultsStore = db.createObjectStore(STORE_RESULTS, { keyPath: "taskId" });
+                } else {
+                    resultsStore = upgradeTx.objectStore(STORE_RESULTS);
+                }
+                if (resultsStore && !resultsStore.indexNames.contains(RESULT_TIMESTAMP_INDEX)) {
+                    resultsStore.createIndex(RESULT_TIMESTAMP_INDEX, ["timestamp", "taskId"]);
+                }
+                let payloadStore;
+                if (!db.objectStoreNames.contains(STORE_PAYLOADS)) {
+                    payloadStore = db.createObjectStore(STORE_PAYLOADS, { keyPath: "taskId" });
+                } else {
+                    payloadStore = upgradeTx.objectStore(STORE_PAYLOADS);
                 }
                 if (!db.objectStoreNames.contains(STORE_REFS)) {
                     db.createObjectStore(STORE_REFS, { keyPath: "id" });
+                }
+
+                if (resultsStore && payloadStore && e.oldVersion < 4) {
+                    const migrateReq = resultsStore.openCursor();
+                    migrateReq.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (!cursor) return;
+                        const value = cursor.value;
+                        if (value?.base64 && value.taskId) {
+                            payloadStore.put({ taskId: value.taskId, base64: value.base64 });
+                            delete value.base64;
+                            cursor.update(value);
+                        }
+                        cursor.continue();
+                    };
                 }
             };
             request.onsuccess = (e) => {
@@ -1310,10 +1389,15 @@
 
     async function persistResultRecord(record) {
         if (!record?.taskId) return;
+        const { base64, ...metaRecord } = record;
         try {
             const db = await openDB();
-            const tx = db.transaction(STORE_RESULTS, "readwrite");
-            tx.objectStore(STORE_RESULTS).put(record);
+            const storeNames = base64 ? [STORE_RESULTS, STORE_PAYLOADS] : [STORE_RESULTS];
+            const tx = db.transaction(storeNames, "readwrite");
+            tx.objectStore(STORE_RESULTS).put(metaRecord);
+            if (base64) {
+                tx.objectStore(STORE_PAYLOADS).put({ taskId: record.taskId, base64 });
+            }
         } catch (err) {
             console.error("Save result failed", err);
         }
@@ -1718,6 +1802,24 @@
     const listMoveAllSelectEl = document.getElementById("listMoveAllSelect");
     const listMoveAllBtn = document.getElementById("listMoveAllBtn");
     const listMoveAllHintEl = document.getElementById("listMoveAllHint");
+    const loadMoreWrapper = document.getElementById("resultsLoadMore");
+    const loadMoreBtn = document.getElementById("loadMoreBtn");
+    const loadMoreHint = document.getElementById("loadMoreHint");
+    const resultsScrollContainer = document.querySelector(".results-scroll");
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener("click", () => loadNextResultsPage());
+    }
+    if (resultsScrollContainer) {
+        resultsScrollContainer.addEventListener("scroll", () => {
+            if (restoreLoading || restoreExhausted) return;
+            const threshold = 200;
+            const distanceFromBottom = resultsScrollContainer.scrollHeight - (resultsScrollContainer.scrollTop + resultsScrollContainer.clientHeight);
+            if (distanceFromBottom < threshold) {
+                loadNextResultsPage();
+            }
+        });
+    }
+    updateLoadMoreUi();
 
     function getListMoveCardAnchor() {
         if (!resultsEl || !listMoveAllCardEl) return null;
@@ -2376,9 +2478,13 @@
             filterResultsView();
             try {
                 const db = await openDB();
-                const tx = db.transaction(STORE_RESULTS, "readwrite");
-                const store = tx.objectStore(STORE_RESULTS);
-                ids.forEach(id => store.delete(id));
+                const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
+                const metaStore = tx.objectStore(STORE_RESULTS);
+                const payloadStore = tx.objectStore(STORE_PAYLOADS);
+                ids.forEach(id => {
+                    metaStore.delete(id);
+                    payloadStore.delete(id);
+                });
             } catch (err) {
                 console.warn("Failed to delete list records", err);
             }
@@ -2470,6 +2576,147 @@
         syncResultsFromDirectory();
     }
 
+    function updateLoadMoreUi() {
+        if (!loadMoreWrapper || !loadMoreBtn) return;
+        
+        if (restoreLoading) {
+            loadMoreWrapper.classList.remove("hidden");
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = "LOADING…";
+            if (loadMoreHint) loadMoreHint.textContent = "Loading saved results…";
+            return;
+        }
+
+        if (restoredResultCount === 0) {
+            loadMoreWrapper.classList.add("hidden");
+            return;
+        }
+
+        loadMoreWrapper.classList.remove("hidden");
+
+        if (restoreExhausted) {
+            loadMoreWrapper.classList.add("hidden"); 
+            return;
+        }
+
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = restoredResultCount ? "LOAD MORE RESULTS" : "LOAD HISTORY";
+        if (loadMoreHint) {
+            loadMoreHint.textContent = restoredResultCount
+                ? `Loaded ${restoredResultCount} task${restoredResultCount === 1 ? "" : "s"}`
+                : "History loads in batches to protect memory";
+        }
+    }
+
+    async function hydrateMissingThumbnail(recordMeta) {
+        if (!recordMeta || recordMeta.thumbnail) return recordMeta?.thumbnail || null;
+        try {
+            const base64 = await fetchFullBase64(recordMeta.taskId);
+            if (!base64) return null;
+            const mime = recordMeta.meta?.mimeType || DEFAULT_IMAGE_MIME;
+            const thumb = await generateThumbnail(base64, mime);
+            if (thumb) {
+                recordMeta.thumbnail = thumb;
+                await updateStoredResult(recordMeta.taskId, { thumbnail: thumb });
+            }
+            return thumb;
+        } catch (err) {
+            console.warn("Thumbnail hydration failed", err);
+            return null;
+        }
+    }
+
+    async function fetchResultMetadataBatch(limit = RESULT_PAGE_SIZE) {
+        const db = await openDB();
+        const tx = db.transaction(STORE_RESULTS, "readonly");
+        const store = tx.objectStore(STORE_RESULTS);
+        const hasIndex = store.indexNames && store.indexNames.contains(RESULT_TIMESTAMP_INDEX);
+        if (restoreCursorUsingIndex === null) {
+            restoreCursorUsingIndex = !!hasIndex;
+        } else if (!!hasIndex !== restoreCursorUsingIndex) {
+            restoreCursorKey = null;
+            restoreCursorUsingIndex = !!hasIndex;
+        }
+        const source = hasIndex ? store.index(RESULT_TIMESTAMP_INDEX) : store;
+        const direction = "prev";
+        const range = restoreCursorKey !== null ? IDBKeyRange.upperBound(restoreCursorKey, true) : null;
+        return await new Promise((resolve, reject) => {
+            const items = [];
+            const request = source.openCursor(range, direction);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (!cursor) {
+                    restoreExhausted = true;
+                    return resolve(items);
+                }
+                const value = cursor.value;
+                if (value?.taskId) {
+                    items.push({
+                        taskId: value.taskId,
+                        meta: value.meta || {},
+                        prompt: value.prompt || "",
+                        timestamp: value.timestamp || 0,
+                        listId: value.listId || MAIN_LIST_ID,
+                        thumbnail: value.thumbnail || null
+                    });
+                    restoreCursorKey = cursor.key;
+                }
+                if (items.length >= limit) {
+                    return resolve(items);
+                }
+                cursor.continue();
+            };
+        });
+    }
+
+    async function loadNextResultsPage(options = {}) {
+        const { reset = false } = options;
+        if (restoreLoading) return;
+        if (reset) {
+            restoreCursorKey = null;
+            restoreExhausted = false;
+            restoredResultCount = 0;
+            restoreCursorUsingIndex = null;
+        } else if (restoreExhausted) {
+            updateLoadMoreUi();
+            return;
+        }
+        restoreLoading = true;
+        updateLoadMoreUi();
+        try {
+            const batch = await fetchResultMetadataBatch(RESULT_PAGE_SIZE);
+            if (!batch.length) return;
+            for (const record of batch) {
+                if (!record.thumbnail && record.meta?.mimeType) {
+                    await hydrateMissingThumbnail(record);
+                }
+                try {
+                    await renderImageCard(record.taskId, null, record.meta, record.prompt, {
+                        isRestoring: true,
+                        timestamp: record.timestamp,
+                        listId: record.listId,
+                        thumbnail: record.thumbnail,
+                        persistToDb: false,
+                        skipDiskSave: true
+                    });
+                    restoredResultCount++;
+                } catch (renderErr) {
+                    console.warn("Failed to render stored task", renderErr);
+                }
+            }
+            applyStoredCardOrder();
+            filterResultsView();
+            updateResultsCount();
+        } catch (err) {
+            console.error("Failed to load stored results", err);
+            setTemporaryErrorStatus("Failed to load stored results.");
+        } finally {
+            restoreLoading = false;
+            updateLoadMoreUi();
+        }
+    }
+
     /* --- Initialization Logic --- */
     async function initApp() {
         await ensurePersistentStorage();
@@ -2488,40 +2735,9 @@
                 refImages = refsReq.result || [];
                 renderRefImageList();
             };
-
-            const txRes = db.transaction(STORE_RESULTS, "readonly");
-            const storeRes = txRes.objectStore(STORE_RESULTS);
-            const resReq = storeRes.getAll();
-            resReq.onsuccess = () => {
-                const savedResults = (resReq.result || []).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-                const renderTasks = savedResults.map(item => renderImageCard(
-                    item.taskId,
-                    item.base64,
-                    item.meta || {},
-                    item.prompt,
-                    {
-                        isRestoring: true,
-                        timestamp: item.timestamp || Date.now(),
-                        listId: item.listId || MAIN_LIST_ID,
-                        thumbnail: item.thumbnail
-                    }
-                ));
-                Promise.all(renderTasks)
-                    .catch(err => console.error("Restore render failed", err))
-                    .finally(() => {
-                        applyStoredCardOrder();
-                        filterResultsView();
-                        dbHydrated = true;
-                        attemptDiskSync();
-                    });
-            };
-            resReq.onerror = () => {
-                applyStoredCardOrder();
-                filterResultsView();
-                dbHydrated = true;
-                attemptDiskSync();
-            };
-
+            await loadNextResultsPage({ reset: true });
+            dbHydrated = true;
+            attemptDiskSync();
         } catch(e) {
             console.error("DB Init Error:", e);
             setTemporaryErrorStatus("Storage initialization failed.");
@@ -2586,28 +2802,33 @@
     }
 
     async function fetchFullBase64(taskId) {
-        let record = resultsData.get(taskId);
-        if (record && record.base64) return record.base64;
-
+        if (!taskId) return null;
+        const record = resultsData.get(taskId);
         try {
             const db = await openDB();
-            const tx = db.transaction(STORE_RESULTS, "readonly");
-            const item = await new Promise(r => {
-                const req = tx.objectStore(STORE_RESULTS).get(taskId);
-                req.onsuccess = () => r(req.result);
-                req.onerror = () => r(null);
+            const tx = db.transaction([STORE_PAYLOADS, STORE_RESULTS], "readonly");
+            const payloadStore = tx.objectStore(STORE_PAYLOADS);
+            const payload = await new Promise((resolve) => {
+                const req = payloadStore.get(taskId);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
             });
-            if (item && item.base64) {
-                if (record) record.base64 = item.base64;
-                return item.base64;
-            }
-        } catch(e) { console.warn("DB read skipped", e); }
+            if (payload?.base64) return payload.base64;
+            const legacyStore = tx.objectStore(STORE_RESULTS);
+            const legacy = await new Promise((resolve) => {
+                const req = legacyStore.get(taskId);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
+            });
+            if (legacy?.base64) return legacy.base64;
+        } catch(e) {
+            console.warn("DB payload read failed", e);
+        }
 
         if (workingDirectoryHandle) {
              const meta = record ? record.meta : {};
              const diskData = await readImagePayloadFromDisk(taskId, meta);
              if (diskData && diskData.base64) {
-                 if (record) record.base64 = diskData.base64;
                  return diskData.base64;
              }
         }
@@ -2619,22 +2840,6 @@
         if (!record) return;
 
         const fullBase64 = await fetchFullBase64(taskId);
-        if (!fullBase64) {
-            try {
-                const db = await openDB();
-                const tx = db.transaction(STORE_RESULTS, "readonly");
-                const store = tx.objectStore(STORE_RESULTS);
-                const dbRecord = await new Promise((resolve) => {
-                    const req = store.get(taskId);
-                    req.onsuccess = () => resolve(req.result);
-                    req.onerror = () => resolve(null);
-                });
-                if (dbRecord) fullBase64 = dbRecord.base64;
-            } catch (e) {
-                console.error("Failed to load full image", e);
-            }
-        }
-
         if (!fullBase64) return;
 
         const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
@@ -2997,6 +3202,195 @@
         if (hint) hint.textContent = statusText;
     }
 
+    function buildResultCardElement({ taskId, listId, timestamp, meta, prompt, thumbnail, base64 }) {
+      const safeMeta = meta || {};
+      const mimeType = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
+      const extension = safeMeta.extension || mimeTypeToExtension(mimeType);
+      const card = document.createElement("div");
+      card.className = "result-card";
+      card.dataset.taskId = taskId;
+      card.dataset.listId = listId;
+      card.dataset.createdAt = String(timestamp);
+      card.draggable = true;
+      card.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("application/x-nano-card-id", taskId);
+          draggingCardId = taskId;
+          e.dataTransfer.setData("application/x-nano-card-sort", taskId);
+          e.dataTransfer.effectAllowed = "move";
+          recordCardDragOrigin(e, card);
+      });
+      card.addEventListener("dragend", () => {
+          draggingCardId = null;
+          clearCardSortHints();
+          clearCardDragOrigin();
+      });
+
+      const title = document.createElement("div");
+      title.className = "result-title";
+      const left = document.createElement("span");
+      left.textContent = `SUCCESS`;
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = "200 OK";
+      title.appendChild(left);
+      title.appendChild(badge);
+
+      const thumbWrap = document.createElement("div");
+      thumbWrap.className = "thumb-wrap";
+      thumbWrap.dataset.taskId = taskId;
+      const img = document.createElement("img");
+      let finalSrc = thumbnail;
+      if (!finalSrc && base64) {
+          finalSrc = `data:${mimeType};base64,${base64}`;
+      }
+      if (finalSrc) {
+        img.src = finalSrc;
+      } else {
+        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        img.style.backgroundColor = "#fee2e2";
+      }
+
+      img.loading = "lazy";
+      img.alt = "Draw result";
+      img.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("application/x-nano-card-id", taskId);
+        e.dataTransfer.setData("application/x-nano-internal-drag", "true");
+        draggingCardId = taskId;
+        e.dataTransfer.effectAllowed = "copyMove";
+        const shim = ensureTransparentDragImage();
+        if (shim) {
+            e.dataTransfer.setDragImage(shim, 0, 0);
+        }
+        recordCardDragOrigin(e, card);
+        });
+      img.addEventListener("dragend", () => {
+          if (draggingCardId === taskId) {
+              draggingCardId = null;
+              clearCardSortHints();
+              clearCardDragOrigin();
+          }
+      });
+      thumbWrap.appendChild(img);
+      thumbWrap.addEventListener("click", () => openLightboxByTaskId(taskId));
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "result-meta";
+      const infoDiv = document.createElement("div");
+      infoDiv.style.display = "flex";
+      infoDiv.style.gap = "4px";
+      const resSpan = document.createElement("span");
+      resSpan.textContent = safeMeta.resolution ? `${safeMeta.resolution}` : "";
+      const ratioSpan = document.createElement("span");
+      ratioSpan.textContent = safeMeta.aspectRatio ? `${safeMeta.aspectRatio}` : "Def";
+      infoDiv.appendChild(resSpan);
+      infoDiv.appendChild(ratioSpan);
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "timestamp-badge";
+      timeSpan.textContent = formatTimestamp(timestamp);
+
+      metaEl.appendChild(infoDiv);
+      metaEl.appendChild(timeSpan);
+
+      const actions = document.createElement("div");
+      actions.className = "result-actions";
+
+      const reuseBtn = document.createElement("button");
+      reuseBtn.type = "button";
+      reuseBtn.className = "btn-mini info";
+      reuseBtn.textContent = "REUSE";
+      reuseBtn.addEventListener("click", () => {
+          promptInput.value = prompt || "";
+          promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `nano-banana-${taskId}.${extension}`;
+      downloadLink.href = "javascript:void(0)";
+      downloadLink.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (dlBtn.disabled) return;
+            dlBtn.disabled = true;
+            const originalText = dlBtn.textContent;
+            dlBtn.textContent = "PREP...";
+            try {
+                const fullBase64 = await fetchFullBase64(taskId);
+                if (!fullBase64) {
+                    setTemporaryErrorStatus("Image data not found in storage.");
+                    return;
+                }
+                const mime = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
+                const tempLink = document.createElement('a');
+                tempLink.href = `data:${mime};base64,${fullBase64}`;
+                tempLink.download = `nano-banana-${taskId}.${extension}`;
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+            } catch (err) {
+                console.error("Download failed", err);
+                setTemporaryErrorStatus("Failed to save image.");
+            } finally {
+                dlBtn.disabled = false;
+                dlBtn.textContent = originalText;
+            }
+        });
+      const dlBtn = document.createElement("button");
+      dlBtn.type = "button";
+      dlBtn.className = "btn-mini";
+      dlBtn.textContent = "SAVE";
+      downloadLink.appendChild(dlBtn);
+
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "btn-mini danger";
+      clearBtn.textContent = "DISCARD";
+      clearBtn.addEventListener("click", async () => {
+        card.remove();
+        captureOrderFromDom();
+        const record = resultsData.get(taskId);
+        cleanupResultRecord(taskId);
+        filterResultsView();
+        try {
+            const db = await openDB();
+            const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
+            tx.objectStore(STORE_RESULTS).delete(taskId);
+            tx.objectStore(STORE_PAYLOADS).delete(taskId);
+        } catch(e) {}
+        if (record) {
+            await deleteResultFiles(taskId, record.meta);
+        }
+      });
+
+      actions.appendChild(reuseBtn);
+      actions.appendChild(downloadLink);
+      actions.appendChild(clearBtn);
+
+      card.appendChild(title);
+      card.appendChild(thumbWrap);
+      card.appendChild(metaEl);
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    function createCardElementOnly(record) {
+      if (!record?.taskId) return null;
+      const safeMeta = { ...(record.meta || {}) };
+      const mimeType = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
+      const extension = safeMeta.extension || mimeTypeToExtension(mimeType);
+      safeMeta.mimeType = mimeType;
+      safeMeta.extension = extension;
+      return buildResultCardElement({
+        taskId: record.taskId,
+        listId: record.listId || MAIN_LIST_ID,
+        timestamp: record.timestamp || Date.now(),
+        meta: safeMeta,
+        prompt: record.prompt || "",
+        thumbnail: record.thumbnail || null,
+        base64: record.base64 || null
+      });
+    }
+
     async function renderImageCard(taskId, base64, meta, usedPrompt, options = {}) {
       const {
           isRestoring = false,
@@ -3032,7 +3426,6 @@
       }
 
       resultsData.set(taskId, { 
-        base64: null, 
         meta: safeMeta, 
         prompt: usedPrompt, 
         timestamp, 
@@ -3040,157 +3433,15 @@
         thumbnail: thumbData
         });
 
-      const card = document.createElement("div");
-      card.className = "result-card";
-      card.dataset.taskId = taskId;
-      card.dataset.listId = listId;
-      card.dataset.createdAt = String(timestamp);
-      card.draggable = true;
-      card.addEventListener("dragstart", (e) => {
-          e.dataTransfer.setData("application/x-nano-card-id", taskId);
-          draggingCardId = taskId;
-          e.dataTransfer.setData("application/x-nano-card-sort", taskId);
-          e.dataTransfer.effectAllowed = "move";
-          recordCardDragOrigin(e, card);
+      const card = buildResultCardElement({
+        taskId,
+        listId,
+        timestamp,
+        meta: safeMeta,
+        prompt: usedPrompt,
+        thumbnail: thumbData,
+        base64
       });
-      card.addEventListener("dragend", () => {
-          draggingCardId = null;
-          clearCardSortHints();
-          clearCardDragOrigin();
-      });
-
-      const title = document.createElement("div");
-      title.className = "result-title";
-      const left = document.createElement("span");
-      left.textContent = `SUCCESS`;
-      const badge = document.createElement("span");
-      badge.className = "badge";
-      badge.textContent = "200 OK";
-      title.appendChild(left);
-      title.appendChild(badge);
-
-      const thumbWrap = document.createElement("div");
-      thumbWrap.className = "thumb-wrap";
-      thumbWrap.dataset.taskId = taskId;
-      const img = document.createElement("img");
-      let finalSrc = thumbData;
-        if (!finalSrc && base64) {
-            finalSrc = `data:${mimeType};base64,${base64}`;
-        }
-        if (finalSrc) {
-        img.src = finalSrc;
-        } else {
-        img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-        img.style.backgroundColor = "#fee2e2"; 
-    }
-
-      img.loading = "lazy";
-      img.alt = "Draw result";
-      img.addEventListener("dragstart", (e) => {
-        e.dataTransfer.setData("application/x-nano-card-id", taskId);
-        e.dataTransfer.setData("application/x-nano-internal-drag", "true"); 
-        draggingCardId = taskId;
-        e.dataTransfer.effectAllowed = "copyMove";
-        const shim = ensureTransparentDragImage();
-        if (shim) {
-            e.dataTransfer.setDragImage(shim, 0, 0);
-        }
-        recordCardDragOrigin(e, card);
-        });
-      img.addEventListener("dragend", () => {
-          if (draggingCardId === taskId) {
-              draggingCardId = null;
-              clearCardSortHints();
-              clearCardDragOrigin();
-          }
-      });
-      thumbWrap.appendChild(img);
-      thumbWrap.addEventListener("click", () => openLightboxByTaskId(taskId));
-
-      const metaEl = document.createElement("div");
-      metaEl.className = "result-meta";
-      const infoDiv = document.createElement("div");
-      infoDiv.style.display = "flex";
-      infoDiv.style.gap = "4px";
-      const resSpan = document.createElement("span");
-      resSpan.textContent = safeMeta.resolution ? `${safeMeta.resolution}` : "";
-      const ratioSpan = document.createElement("span");
-      ratioSpan.textContent = safeMeta.aspectRatio ? `${safeMeta.aspectRatio}` : "Def";
-      infoDiv.appendChild(resSpan);
-      infoDiv.appendChild(ratioSpan);
-      const timeSpan = document.createElement("span");
-      timeSpan.className = "timestamp-badge";
-      timeSpan.textContent = formatTimestamp(timestamp);
-      metaEl.appendChild(infoDiv);
-      metaEl.appendChild(timeSpan);
-
-      const actions = document.createElement("div");
-      actions.className = "result-actions";
-      
-      const reuseBtn = document.createElement("button");
-      reuseBtn.type = "button";
-      reuseBtn.className = "btn-mini info";
-      reuseBtn.textContent = "REUSE";
-      reuseBtn.addEventListener("click", () => {
-          promptInput.value = usedPrompt || "";
-          promptInput.dispatchEvent(new Event("input", { bubbles: true }));
-      });
-
-      const downloadLink = document.createElement("a");
-      downloadLink.download = `nano-banana-${taskId}.${extension}`;
-      downloadLink.href = "javascript:void(0)";
-      downloadLink.addEventListener("click", async (e) => {
-            e.preventDefault(); 
-            e.stopPropagation();
-
-            let fullBase64 = resultsData.get(taskId)?.base64;
-
-            if (!fullBase64) return;
-
-            const mime = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
-            downloadLink.href = `data:${mime};base64,${fullBase64}`;
-            
-            const tempLink = document.createElement('a');
-            tempLink.href = `data:${mime};base64,${fullBase64}`;
-            tempLink.download = `nano-banana-${taskId}.${extension}`;
-            document.body.appendChild(tempLink);
-            tempLink.click();
-            document.body.removeChild(tempLink);
-        });
-      const dlBtn = document.createElement("button");
-      dlBtn.type = "button";
-      dlBtn.className = "btn-mini";
-      dlBtn.textContent = "SAVE";
-      downloadLink.appendChild(dlBtn);
-
-      const clearBtn = document.createElement("button");
-      clearBtn.type = "button";
-      clearBtn.className = "btn-mini danger";
-      clearBtn.textContent = "DISCARD";
-      clearBtn.addEventListener("click", async () => {
-        card.remove();
-        captureOrderFromDom();
-        const record = resultsData.get(taskId);
-        cleanupResultRecord(taskId);
-        filterResultsView();
-        try {
-            const db = await openDB();
-            const tx = db.transaction(STORE_RESULTS, "readwrite");
-            tx.objectStore(STORE_RESULTS).delete(taskId);
-        } catch(e) {}
-        if (record) {
-            await deleteResultFiles(taskId, record.meta);
-        }
-      });
-
-      actions.appendChild(reuseBtn);
-      actions.appendChild(downloadLink);
-      actions.appendChild(clearBtn);
-
-      card.appendChild(title);
-      card.appendChild(thumbWrap);
-      card.appendChild(metaEl);
-      card.appendChild(actions);
 
       const skeleton = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
       if (skeleton) {
@@ -3219,6 +3470,7 @@
                 persistResultMetadataSnapshot(taskId);
             }, 500 + Math.random() * 1000); 
         }
+        return card;
     }
 
     function generateThumbnail(base64, mimeType = "image/png") {
@@ -3279,13 +3531,6 @@
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
 
-    function getFullImageDataUrl(taskId) {
-        const record = resultsData.get(taskId);
-        if (!record?.base64) return null;
-        const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
-        return `data:${mimeType};base64,${record.base64}`;
-    }
-
     function mimeTypeToExtension(mimeType = DEFAULT_IMAGE_MIME) {
         if (!mimeType) return "img";
         const normalized = mimeType.toLowerCase();
@@ -3320,16 +3565,6 @@
         return new Blob([bytes], { type: mimeType });
     }
 
-    function getOrCreateObjectUrl(taskId) {
-        const record = resultsData.get(taskId);
-        if (!record?.base64) return null;
-        const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
-        if (!record.objectUrl) {
-            record.objectUrl = URL.createObjectURL(base64ToBlob(record.base64, mimeType));
-        }
-        return record.objectUrl;
-    }
-
     function cleanupResultRecord(taskId) {
         const record = resultsData.get(taskId);
         if (record?.objectUrl) {
@@ -3355,6 +3590,23 @@
             });
         } catch (err) {
             console.warn("Update result failed", err);
+        }
+    }
+
+    async function hasResultRecord(taskId) {
+        if (!taskId) return false;
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readonly");
+            const store = tx.objectStore(STORE_RESULTS);
+            return await new Promise((resolve) => {
+                const req = store.get(taskId);
+                req.onsuccess = () => resolve(!!req.result);
+                req.onerror = () => resolve(false);
+            });
+        } catch (err) {
+            console.warn("Failed to query existing record", err);
+            return false;
         }
     }
 
@@ -3527,6 +3779,158 @@
         }
     }
 
+    const DISK_SYNC_BATCH_SIZE = 50;
+
+    function normalizeDiskRecord(record) {
+        if (!record?.taskId) return null;
+        const safeMeta = { ...(record.meta || {}) };
+        const mimeType = safeMeta.mimeType || DEFAULT_IMAGE_MIME;
+        const extension = safeMeta.extension || mimeTypeToExtension(mimeType);
+        safeMeta.mimeType = mimeType;
+        safeMeta.extension = extension;
+        return {
+            taskId: record.taskId,
+            base64: record.base64 || null,
+            prompt: record.prompt || "",
+            timestamp: record.timestamp || Date.now(),
+            listId: record.listId || MAIN_LIST_ID,
+            thumbnail: record.thumbnail || null,
+            meta: safeMeta
+        };
+    }
+
+    async function filterExistingDiskRecords(records = []) {
+        const validRecords = records.filter((record) => record?.taskId);
+        if (!validRecords.length) return [];
+        try {
+            const db = await openDB();
+            return await new Promise((resolve) => {
+                const tx = db.transaction(STORE_RESULTS, "readonly");
+                const store = tx.objectStore(STORE_RESULTS);
+                const includeFlags = new Array(validRecords.length).fill(false);
+                let settled = false;
+                const finish = (result) => {
+                    if (settled) return;
+                    settled = true;
+                    resolve(result);
+                };
+                tx.oncomplete = () => {
+                    const filtered = validRecords.filter((_, idx) => includeFlags[idx]);
+                    finish(filtered);
+                };
+                tx.onabort = () => {
+                    console.warn("Result existence check aborted", tx.error);
+                    finish(validRecords);
+                };
+                tx.onerror = () => {
+                    console.warn("Result existence check failed", tx.error);
+                    finish(validRecords);
+                };
+                validRecords.forEach((record, index) => {
+                    const req = store.get(record.taskId);
+                    req.onsuccess = () => {
+                        includeFlags[index] = !req.result;
+                    };
+                    req.onerror = () => {
+                        includeFlags[index] = true;
+                    };
+                });
+            });
+        } catch (err) {
+            console.warn("Batch existence check failed", err);
+            return validRecords;
+        }
+    }
+
+    async function persistRecordsBatch(records = []) {
+        const validRecords = records.filter((record) => record?.taskId);
+        if (!validRecords.length) return true;
+        try {
+            const db = await openDB();
+            const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
+            const resultStore = tx.objectStore(STORE_RESULTS);
+            const payloadStore = tx.objectStore(STORE_PAYLOADS);
+            validRecords.forEach((record) => {
+                const { base64, ...metaRecord } = record;
+                resultStore.put(metaRecord);
+                if (base64) {
+                    payloadStore.put({ taskId: record.taskId, base64 });
+                }
+            });
+            await new Promise((resolve, reject) => {
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error);
+            });
+            return true;
+        } catch (err) {
+            console.error("Batch save result failed", err);
+            return false;
+        }
+    }
+
+    async function processResultBatch(batchHandles = [], context = {}) {
+        const { canRenderImmediately = false, foundListIds } = context;
+        if (!Array.isArray(batchHandles) || !batchHandles.length) {
+            return { imported: 0, rendered: 0, stagedReload: false };
+        }
+        const rawRecords = await Promise.all(
+            batchHandles.map(({ handle, name }) => readResultFromDisk(handle, name))
+        );
+        const normalized = rawRecords.map(normalizeDiskRecord).filter(Boolean);
+        if (!normalized.length) {
+            return { imported: 0, rendered: 0, stagedReload: false };
+        }
+        const deduped = [];
+        const seenTaskIds = new Set();
+        normalized.forEach((record) => {
+            if (seenTaskIds.has(record.taskId)) return;
+            seenTaskIds.add(record.taskId);
+            deduped.push(record);
+        });
+        deduped.forEach((record) => {
+            if (record.listId && foundListIds) {
+                foundListIds.add(record.listId);
+            }
+        });
+
+        const newRecords = await filterExistingDiskRecords(deduped);
+        if (!newRecords.length) {
+            return { imported: 0, rendered: 0, stagedReload: false };
+        }
+
+        const persisted = await persistRecordsBatch(newRecords);
+        if (!persisted) {
+            return { imported: 0, rendered: 0, stagedReload: false };
+        }
+
+        if (!canRenderImmediately) {
+            return { imported: newRecords.length, rendered: 0, stagedReload: true };
+        }
+
+        const fragment = document.createDocumentFragment();
+        let renderCount = 0;
+        newRecords.forEach((record) => {
+            resultsData.set(record.taskId, {
+                meta: record.meta,
+                prompt: record.prompt,
+                timestamp: record.timestamp,
+                listId: record.listId,
+                thumbnail: record.thumbnail
+            });
+            const card = createCardElementOnly(record);
+            if (card) {
+                fragment.appendChild(card);
+                renderCount++;
+            }
+        });
+        if (renderCount && fragment.hasChildNodes()) {
+            insertBeforeListMoveCard(fragment);
+            filterResultsView();
+        }
+        return { imported: newRecords.length, rendered: renderCount, stagedReload: false };
+    }
+
     async function syncResultsFromDirectory() {
         if (!folderAccessGranted || !workingDirectoryHandle || typeof workingDirectoryHandle.entries !== "function") return;
         if (diskSyncPromise) return diskSyncPromise;
@@ -3536,31 +3940,36 @@
             await loadCardOrderFromDisk(true);
             
             let imported = 0;
+            let renderedDuringSync = 0;
+            let stagedReload = false;
+            const hasAnyCards = resultsEl && resultsEl.querySelector(".result-card:not(.skeleton)");
+            let canRenderImmediately = !!hasAnyCards;
             const foundListIds = new Set(); 
             if (listConfig.lists.has(MAIN_LIST_ID)) foundListIds.add(MAIN_LIST_ID);
+            const batchHandles = [];
+            const flushBatch = async () => {
+                if (!batchHandles.length) return;
+                const stats = await processResultBatch(batchHandles.splice(0, batchHandles.length), {
+                    canRenderImmediately,
+                    foundListIds
+                });
+                imported += stats.imported;
+                renderedDuringSync += stats.rendered;
+                if (stats.stagedReload) {
+                    stagedReload = true;
+                }
+            };
 
             try {
                 for await (const [name, handle] of workingDirectoryHandle.entries()) {
                     if (handle?.kind !== "file") continue;
                     if (!isResultMetadataFile(name)) continue;
-                    
-                    const record = await readResultFromDisk(handle, name);
-                    if (!record) continue;
-
-                    if (record.listId) {
-                        foundListIds.add(record.listId);
+                    batchHandles.push({ name, handle });
+                    if (batchHandles.length >= DISK_SYNC_BATCH_SIZE) {
+                        await flushBatch();
                     }
-
-                    await renderImageCard(record.taskId, record.base64, record.meta, record.prompt, {
-                        isRestoring: true,
-                        timestamp: record.timestamp,
-                        listId: record.listId,
-                        persistToDb: true,
-                        skipDiskSave: true,
-                        thumbnail: record.thumbnail
-                    });
-                    imported++;
                 }
+                await flushBatch();
 
                 let configChanged = false;
                 foundListIds.forEach(id => {
@@ -3579,7 +3988,9 @@
                     renderListTabs();
                 }
 
-                if (imported) {
+                if (stagedReload) {
+                    await loadNextResultsPage({ reset: true });
+                } else if (renderedDuringSync) {
                     applyStoredCardOrder();
                     filterResultsView();
                 }
@@ -4138,9 +4549,13 @@
           filterResultsView();
           try {
             const db = await openDB();
-            const tx = db.transaction(STORE_RESULTS, "readwrite");
-            const store = tx.objectStore(STORE_RESULTS);
-            ids.forEach(id => store.delete(id));
+            const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
+            const metaStore = tx.objectStore(STORE_RESULTS);
+            const payloadStore = tx.objectStore(STORE_PAYLOADS);
+            ids.forEach(id => {
+                metaStore.delete(id);
+                payloadStore.delete(id);
+            });
           } catch(e) { console.error(e); }
           await Promise.all(deleteTargets.map(({ id, meta }) => deleteResultFiles(id, meta)));
     });

@@ -8,6 +8,14 @@
 
 ---
 
+## UI Preview
+
+<p align="center">
+  <img src="screenshot.png" alt="Nano Banana Pro UI Interface" width="100%">
+</p>
+
+---
+
 ## ✨ Key Features
 
 * **⚡ Serverless & Single-File:** The entire app is contained in one `nano.html` file. No Node.js, Python, or Docker required. Just download and run.
@@ -96,13 +104,13 @@ The `<style>` block at the top of the file contains all the CSS variables (`--pr
 
 ---
 
-## 📄 License
-
-This project is open-source and available under the **MIT License**. Feel free to fork, modify, and distribute.
-
----
-
 ## ⚖️ Disclaimer
 
 * **Vibe Coding:** This project is a result of vibe coding (developed using AI coding tools) and is provided for reference only.
 * **Experimental:** As a "Lab Edition", it is intended for testing and personal use.
+
+---
+
+## 📄 License
+
+This project is open-source and available under the **MIT License**. Feel free to fork, modify, and distribute.
