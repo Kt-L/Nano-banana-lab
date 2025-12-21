@@ -640,6 +640,8 @@
       overflow: hidden;
       transition: all 0.2s ease;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      content-visibility: auto;
+      contain-intrinsic-size: 160px 250px;
     }
     .result-card.drag-sort-before::before,
     .result-card.drag-sort-after::after {
@@ -1268,6 +1270,33 @@
     const DEFAULT_IMAGE_MIME = "image/png";
     const DISK_IMAGE_EXTENSIONS = ["png","jpg","jpeg","webp","gif","bmp"];
     const resultsData = new Map();
+    const MAX_RUNTIME_RESULT_RECORDS = 200;
+    function rememberResultRecord(taskId, payload = {}) {
+        if (!taskId) return null;
+        let record = resultsData.get(taskId);
+        if (record) {
+            Object.assign(record, payload);
+        } else {
+            record = { taskId, ...payload };
+            resultsData.set(taskId, record);
+        }
+        if ("thumbnail" in record) delete record.thumbnail;
+        enforceResultsCacheLimit();
+        return record;
+    }
+    function enforceResultsCacheLimit() {
+        if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) return;
+        for (const [id, record] of resultsData) {
+            if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) break;
+            const cardExists = document.querySelector(`.result-card[data-task-id="${id}"]`);
+            if (cardExists) continue;
+            if (record?.objectUrl) {
+                revokeObjectUrl(record.objectUrl);
+                record.objectUrl = null;
+            }
+            resultsData.delete(id);
+        }
+    }
     let cardOrder = [];
     let cardOrderDirty = false;
     let cardOrderSavePromise = null;
@@ -2952,15 +2981,65 @@
         lbState.dragMoved = false;
         lightboxImage.style.transform = `translate(${lbState.x}px, ${lbState.y}px) scale(${lbState.scale})`;
     });
-    lightboxClose.addEventListener("click", closeLightbox);
-    lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target.classList.contains('lightbox-inner')) closeLightbox(); });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeLightbox();
-      if (lightbox.classList.contains("visible")) {
-          if (e.key === "ArrowLeft") navigateLightbox(-1);
-          if (e.key === "ArrowRight") navigateLightbox(1);
-      }
-    });
+        lightboxClose.addEventListener("click", closeLightbox);
+        lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target.classList.contains('lightbox-inner')) closeLightbox(); });
+        
+        function adjustLightboxScale(delta) {
+            if (!lightbox.classList.contains("visible")) return;
+        
+            let newScale = lbState.scale + delta;
+            
+            if (newScale < 0.1) newScale = 0.1;
+            if (newScale > 20) newScale = 20;
+
+            lbState.scale = newScale;
+
+            if (lbState.scale !== 1) {
+                lbState.isZoomed = true;
+                lightboxImage.classList.add("zoomed");
+            } else {
+                resetLightboxZoom();
+                return; 
+            }
+
+            lightboxImage.style.transform = `translate(${lbState.x}px, ${lbState.y}px) scale(${lbState.scale})`;
+        }
+
+        function resetLightboxZoom() {
+            lbState.isZoomed = false;
+            lbState.scale = 1;
+            lbState.x = 0;
+            lbState.y = 0;
+            lightboxImage.classList.remove("zoomed");
+            lightboxImage.style.transform = `translate(0px, 0px) scale(1)`;
+        }
+
+        document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            if (importOverlayEl && !importOverlayEl.classList.contains("hidden") && importDialogResolver) {
+                cancelImportDialog();
+            } else {
+                closeLightbox();
+            }
+        }
+
+        if (lightbox.classList.contains("visible")) {
+            if (e.key === "ArrowLeft") navigateLightbox(-1);
+            if (e.key === "ArrowRight") navigateLightbox(1);
+            
+            const k = e.key.toLowerCase();
+            
+            if (k === "z") {
+                adjustLightboxScale(1); 
+            }
+            if (k === "x") {
+                adjustLightboxScale(-1);
+            }
+            if (k === "c") {
+                resetLightboxZoom();
+            }
+        }
+        });
 
     /* --- Reference Image Logic with Persistence --- */
     function renderRefImageList() {
@@ -3239,15 +3318,55 @@
       thumbWrap.className = "thumb-wrap";
       thumbWrap.dataset.taskId = taskId;
       const img = document.createElement("img");
-      let finalSrc = thumbnail;
+      let finalSrc = null;
+      let usedObjectUrl = false;
+      const convertDataUrlToObjectUrl = (dataUrl) => {
+          if (!dataUrl) return null;
+          if (!dataUrl.startsWith("data:")) return dataUrl;
+          try {
+              const commaIndex = dataUrl.indexOf(",");
+              if (commaIndex === -1) return null;
+              const meta = dataUrl.substring(5, commaIndex);
+              const base64Payload = dataUrl.substring(commaIndex + 1);
+              const inferredMime = meta.split(";")[0] || mimeType;
+              return URL.createObjectURL(base64ToBlob(base64Payload, inferredMime));
+          } catch (err) {
+              console.warn("Thumbnail conversion failed", err);
+              return null;
+          }
+      };
+      if (thumbnail) {
+          finalSrc = convertDataUrlToObjectUrl(thumbnail);
+      }
       if (!finalSrc && base64) {
-          finalSrc = `data:${mimeType};base64,${base64}`;
+          try {
+              finalSrc = URL.createObjectURL(base64ToBlob(base64, mimeType));
+          } catch (err) {
+              console.warn("Failed to create object URL from base64", err);
+          }
+      }
+      if (!finalSrc && thumbnail) {
+          finalSrc = thumbnail;
       }
       if (finalSrc) {
         img.src = finalSrc;
+        if (finalSrc.startsWith("blob:")) {
+            usedObjectUrl = true;
+            img.dataset.usingObjectUrl = "true";
+        } else {
+            delete img.dataset.usingObjectUrl;
+        }
       } else {
         img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         img.style.backgroundColor = "#fee2e2";
+        delete img.dataset.usingObjectUrl;
+      }
+      const runtimeRecord = resultsData.get(taskId);
+      if (runtimeRecord) {
+          if (runtimeRecord.objectUrl && runtimeRecord.objectUrl !== finalSrc) {
+              revokeObjectUrl(runtimeRecord.objectUrl);
+          }
+          runtimeRecord.objectUrl = usedObjectUrl ? finalSrc : null;
       }
 
       img.loading = "lazy";
@@ -3425,12 +3544,11 @@
           await persistResultRecord({ taskId, base64, meta: safeMeta, prompt: usedPrompt, timestamp, listId, thumbnail: thumbData });
       }
 
-      resultsData.set(taskId, { 
+      rememberResultRecord(taskId, { 
         meta: safeMeta, 
         prompt: usedPrompt, 
         timestamp, 
-        listId, 
-        thumbnail: thumbData
+        listId
         });
 
       const card = buildResultCardElement({
@@ -3565,10 +3683,30 @@
         return new Blob([bytes], { type: mimeType });
     }
 
+    function revokeObjectUrl(url) {
+        if (typeof url !== "string") return;
+        if (!url.startsWith("blob:")) return;
+        try {
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.warn("Failed to revoke object URL", err);
+        }
+    }
+
     function cleanupResultRecord(taskId) {
+        if (!taskId) return;
         const record = resultsData.get(taskId);
+        const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+        if (card) {
+            const img = card.querySelector("img");
+            if (img && img.dataset.usingObjectUrl === "true" && img.src.startsWith("blob:")) {
+                revokeObjectUrl(img.src);
+                delete img.dataset.usingObjectUrl;
+            }
+        }
         if (record?.objectUrl) {
-            URL.revokeObjectURL(record.objectUrl);
+            revokeObjectUrl(record.objectUrl);
+            record.objectUrl = null;
         }
         resultsData.delete(taskId);
     }
@@ -3641,10 +3779,9 @@
         if (!folderAccessGranted || !workingDirectoryHandle) return;
         const record = recordOverride || resultsData.get(taskId);
         if (!record) return;
-        let thumbData = record.thumbnail;
+        let thumbData = recordOverride?.thumbnail || null;
         if (!thumbData) {
-            const imgEl = document.querySelector(`.result-card[data-task-id="${taskId}"] img`);
-            if (imgEl) thumbData = imgEl.src;
+            thumbData = await fetchStoredThumbnail(taskId);
         }
         const payload = {
             prompt: record.prompt || "",
@@ -3652,7 +3789,7 @@
             timestamp: record.timestamp || Date.now(),
             listId: record.listId || MAIN_LIST_ID,
             taskId,
-            thumbnail: thumbData
+            thumbnail: thumbData || null
         };
         try {
             await writeMetadataFile(taskId, payload);
@@ -3662,6 +3799,23 @@
             } else {
                 console.warn("Metadata sync failed", err);
             }
+        }
+    }
+
+    async function fetchStoredThumbnail(taskId) {
+        if (!taskId) return null;
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_RESULTS, "readonly");
+            const store = tx.objectStore(STORE_RESULTS);
+            return await new Promise((resolve) => {
+                const req = store.get(taskId);
+                req.onsuccess = () => resolve(req.result?.thumbnail || null);
+                req.onerror = () => resolve(null);
+            });
+        } catch (err) {
+            console.warn("Thumbnail lookup failed", err);
+            return null;
         }
     }
 
@@ -3911,12 +4065,11 @@
         const fragment = document.createDocumentFragment();
         let renderCount = 0;
         newRecords.forEach((record) => {
-            resultsData.set(record.taskId, {
+            rememberResultRecord(record.taskId, {
                 meta: record.meta,
                 prompt: record.prompt,
                 timestamp: record.timestamp,
-                listId: record.listId,
-                thumbnail: record.thumbnail
+                listId: record.listId
             });
             const card = createCardElementOnly(record);
             if (card) {
