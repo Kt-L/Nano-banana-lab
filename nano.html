@@ -649,6 +649,14 @@
       /* box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.35); */
       background-color: #fef2f2;
     }
+    .result-card.locator-highlight {
+      border-color: #a855f7 !important;
+      background-color: #f3e8ff !important;
+      box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.4) !important;
+      transform: scale(1.02);
+      z-index: 10;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
 
     .result-card.drag-sort-before::before,
     .result-card.drag-sort-after::after {
@@ -1277,12 +1285,14 @@
     // Initialize IndexedDB
     let dbInstance = null;
     const activeTasks = new Map();
+    let lastViewedTaskId = null;
+    let locatorTimer = null;
     let refImages = [];
     const REF_IMAGE_LIMIT = 14;
     const DEFAULT_IMAGE_MIME = "image/png";
     const DISK_IMAGE_EXTENSIONS = ["png","jpg","jpeg","webp","gif","bmp"];
     const resultsData = new Map();
-    const MAX_RUNTIME_RESULT_RECORDS = 200;
+    const MAX_RUNTIME_RESULT_RECORDS = 80;
     const UNSEEN_RESULTS_STORAGE_KEY = "nano_banana_unseen_results_v1";
     let unseenResultIds = loadStoredUnseenResultIds();
     const PENDING_TASKS_STORAGE_KEY = "nano_banana_pending_tasks_v1";
@@ -1304,8 +1314,6 @@
         if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) return;
         for (const [id, record] of resultsData) {
             if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) break;
-            const cardExists = document.querySelector(`.result-card[data-task-id="${id}"]`);
-            if (cardExists) continue;
             if (record?.objectUrl) {
                 revokeObjectUrl(record.objectUrl);
                 record.objectUrl = null;
@@ -3171,10 +3179,33 @@
         return null;
     }
 
-    async function openLightboxByTaskId(taskId) {
+    async function openLightboxByTaskId(taskId, context = 'result') {
         let record = resultsData.get(taskId);
-        if (!record) return;
-        markResultSeen(taskId);
+
+        if (context === 'result') {
+            lastViewedTaskId = taskId; 
+            if (!record) {
+                try {
+                    const stored = await fetchStoredResultRecord(taskId);
+                    if (stored) {
+                        record = {
+                            taskId: stored.taskId,
+                            meta: stored.meta || {},
+                        };
+                        // resultsData.set(taskId, record); 
+                    }
+                } catch (err) {
+                    console.warn("Lightbox fallback fetch failed", err);
+                }
+            }
+        }
+
+        if (!record && context === 'result') return; 
+        
+        if (context === 'result') {
+            markResultSeen(taskId);
+        }
+
         if (lightboxImage.dataset.tempUrl) {
             URL.revokeObjectURL(lightboxImage.dataset.tempUrl);
             lightboxImage.removeAttribute("data-tempUrl");
@@ -3183,30 +3214,75 @@
         const fullBase64 = await fetchFullBase64(taskId);
         if (!fullBase64) return;
 
-        const mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
+        let mimeType = DEFAULT_IMAGE_MIME;
+        if (context === 'ref') {
+             const refEntry = refImages.find(r => r.sourceId === taskId);
+             if (refEntry) mimeType = refEntry.mimeType;
+        } else if (record) {
+             mimeType = record.meta?.mimeType || DEFAULT_IMAGE_MIME;
+        }
+
         const blob = base64ToBlob(fullBase64, mimeType);
         const objectUrl = URL.createObjectURL(blob);
 
         lightboxImage.src = objectUrl;
         lightboxImage.dataset.taskId = taskId;
-        lightboxImage.dataset.tempUrl = objectUrl; 
+        lightboxImage.dataset.context = context; 
+        lightboxImage.dataset.tempUrl = objectUrl;
         
         lightboxImage.alt = "Preview image";
         resetLightboxState();
         lightbox.classList.add("visible");
         lightbox.setAttribute("aria-hidden", "false");
     }
+
+    function triggerLastViewedLocator() {
+        if (!lastViewedTaskId) return;
+
+        const card = document.querySelector(`.result-card[data-task-id="${lastViewedTaskId}"]`);
+        if (!card) {
+            setTemporaryErrorStatus("Last viewed card not in current view");
+            return;
+        }
+
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        document.querySelectorAll('.locator-highlight').forEach(el => {
+            el.classList.remove('locator-highlight');
+        });
+
+        requestAnimationFrame(() => {
+            card.classList.add('locator-highlight');
+        });
+
+        if (locatorTimer) clearTimeout(locatorTimer);
+        locatorTimer = setTimeout(() => {
+            card.classList.remove('locator-highlight');
+            locatorTimer = null;
+        }, 3000);
+    }
     function closeLightbox() {
         lightbox.classList.remove("visible");
         lightbox.setAttribute("aria-hidden", "true");
         
+        const tempUrl = lightboxImage.dataset.tempUrl;
+        
         setTimeout(() => { 
             lightboxImage.removeAttribute("data-task-id"); 
             
-            if (lightboxImage.dataset.tempUrl) {
-                URL.revokeObjectURL(lightboxImage.dataset.tempUrl);
+            if (tempUrl) {
+                URL.revokeObjectURL(tempUrl);
                 lightboxImage.removeAttribute("data-tempUrl");
+                
+                const currentId = lightboxImage.dataset.taskId;
+                if (currentId) {
+                    const record = resultsData.get(currentId);
+                    if (record && record.objectUrl === tempUrl) {
+                        record.objectUrl = null;
+                    }
+                }
             }
+            // ------------------------
             
             lightboxImage.src = ""; 
             resetLightboxState(); 
@@ -3352,9 +3428,10 @@
         }
 
         if (lightbox.classList.contains("visible")) {
-            if (e.key === "ArrowLeft") navigateLightbox(-1);
-            if (e.key === "ArrowRight") navigateLightbox(1);
-            
+            if (lightboxImage.dataset.context !== 'ref') {
+                if (e.key === "ArrowLeft") navigateLightbox(-1);
+                if (e.key === "ArrowRight") navigateLightbox(1);
+            }
             const k = e.key.toLowerCase();
             
             if (k === "z") {
@@ -3372,6 +3449,10 @@
         const isEditableTarget = document.activeElement?.isContentEditable || ["input", "textarea", "select"].includes(targetTag);
         if (!isEditableTarget) {
             const keyLower = e.key?.toLowerCase();
+            if (keyLower === "q" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                triggerLastViewedLocator();
+            }
             if (keyLower === "j" && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 e.preventDefault();
                 setActiveList(REF_LIST_ID);
@@ -3601,7 +3682,7 @@
             }
             imageEl.alt = entry.label || "Reference";
             thumbWrap.appendChild(imageEl);
-            thumbWrap.addEventListener("click", () => openLightboxByTaskId(entry.sourceId));
+            thumbWrap.addEventListener("click", () => openLightboxByTaskId(entry.sourceId, 'ref'));
 
             const meta = document.createElement("div");
             meta.className = "ref-meta";
@@ -3616,7 +3697,7 @@
             delBtn.style.fontSize = "9px";
             delBtn.style.padding = "2px 4px";
             delBtn.addEventListener("click", (e) => {
-                if (!confirmAction(e, "Remove this reference image?")) return;
+                // if (!confirmAction(e, "Remove this reference image?")) return;
                 removeRefSelection(entry.id);
             });
             meta.appendChild(nameEl);
@@ -3907,23 +3988,8 @@
       const img = document.createElement("img");
       let finalSrc = null;
       let usedObjectUrl = false;
-      const convertDataUrlToObjectUrl = (dataUrl) => {
-          if (!dataUrl) return null;
-          if (!dataUrl.startsWith("data:")) return dataUrl;
-          try {
-              const commaIndex = dataUrl.indexOf(",");
-              if (commaIndex === -1) return null;
-              const meta = dataUrl.substring(5, commaIndex);
-              const base64Payload = dataUrl.substring(commaIndex + 1);
-              const inferredMime = meta.split(";")[0] || mimeType;
-              return URL.createObjectURL(base64ToBlob(base64Payload, inferredMime));
-          } catch (err) {
-              console.warn("Thumbnail conversion failed", err);
-              return null;
-          }
-      };
       if (thumbnail) {
-          finalSrc = convertDataUrlToObjectUrl(thumbnail);
+          finalSrc = thumbnail;
       }
       if (!finalSrc && base64) {
           try {
@@ -5348,6 +5414,8 @@
     }
 
     generateBtn.addEventListener("click", () => {
+        generateBtn.style.transform = "scale(0.95)";
+        setTimeout(() => generateBtn.style.transform = "", 100);
       const prompt = promptInput.value || "";
       if (!prompt.trim() && !refImages.length) { setTemporaryErrorStatus("Prompt or reference image required."); return; }
       const keys = getApiKeyValues();
@@ -5377,6 +5445,15 @@
           executeTask(taskId, { ...configSnapshot, apiKey }).catch(console.error);
       }
       updateGlobalStatus();
+    });
+
+    promptInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            if (!generateBtn.disabled) {
+                generateBtn.click();
+            }
+        }
     });
 
     clearResultsBtn.addEventListener("click", async (e) => {
