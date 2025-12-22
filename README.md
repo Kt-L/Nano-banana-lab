@@ -64,9 +64,9 @@ Master the interface with these undocumented hotkeys:
 | Key | Action | Description |
 | --- | --- | --- |
 | **`Q`** | **Quick Locator** | Instantly scrolls to and highlights the last viewed image in the feed. |
-| **`J`** | **Jump to Ref** | Switches the active view to the `REF` (Reference) list immediately. |
-| **`Esc`** | **Close / Cancel** | Closes the Lightbox or cancels the Import dialog. |
-| **`←` / `→`** | **Navigation** | Navigate through images inside the Lightbox. |
+| **`F`** | **Jump to Ref** | Switches the active view to the `REF` (Reference) list immediately. |
+| **`Esc`(E)** | **Close / Cancel** | Closes the Lightbox or cancels the Import dialog. |
+| **`←`(A) / `→`(D)** | **Navigation** | Navigate through images inside the Lightbox. |
 | **`Z`** | **Zoom In** | Incrementally zoom into the image (Lightbox only). |
 | **`X`** | **Zoom Out** | Incrementally zoom out (Lightbox only). |
 | **`C`** | **Center/Reset** | Reset zoom level to 100% (Lightbox only). |
