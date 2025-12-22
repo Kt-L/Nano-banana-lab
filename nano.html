@@ -1280,7 +1280,8 @@
     const REF_LIST_ID = "ref";
     const DIR_PICKER_ID = "nano-banana-workspace";
     const RESULT_TIMESTAMP_INDEX = "byTimestamp";
-    const RESULT_PAGE_SIZE = 40;
+    const RESULT_PAGE_SIZE = 300;
+    const MAX_DOM_CARDS = 1000;
 
     // Initialize IndexedDB
     let dbInstance = null;
@@ -1292,7 +1293,7 @@
     const DEFAULT_IMAGE_MIME = "image/png";
     const DISK_IMAGE_EXTENSIONS = ["png","jpg","jpeg","webp","gif","bmp"];
     const resultsData = new Map();
-    const MAX_RUNTIME_RESULT_RECORDS = 80;
+    const MAX_RUNTIME_RESULT_RECORDS = 600;
     const UNSEEN_RESULTS_STORAGE_KEY = "nano_banana_unseen_results_v1";
     let unseenResultIds = loadStoredUnseenResultIds();
     const PENDING_TASKS_STORAGE_KEY = "nano_banana_pending_tasks_v1";
@@ -1312,13 +1313,14 @@
     }
     function enforceResultsCacheLimit() {
         if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) return;
-        for (const [id, record] of resultsData) {
-            if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) break;
-            if (record?.objectUrl) {
-                revokeObjectUrl(record.objectUrl);
-                record.objectUrl = null;
-            }
-            resultsData.delete(id);
+        const keys = Array.from(resultsData.keys());
+        const deleteCount = resultsData.size - MAX_RUNTIME_RESULT_RECORDS;
+        for (let i = 0; i < deleteCount; i++) {
+            const taskId = keys[i];
+            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+            // We use { keepObserver: true } because the card stays in the DOM (up to MAX_DOM_CARDS).
+            // This ensures IntersectionObserver can still trigger restoreCardMedia when scrolled into view.
+            cleanupResultRecord(taskId, card, { keepObserver: true });
         }
     }
     function loadStoredUnseenResultIds() {
@@ -1571,6 +1573,7 @@
     let restoreLoading = false;
     let restoreExhausted = false;
     let restoredResultCount = 0;
+    let cardVisibilityObserver = null;
 
     function openDB() {
         if (dbInstance) return Promise.resolve(dbInstance);
@@ -2683,10 +2686,160 @@
         const cards = resultsEl.querySelectorAll(".result-card");
         cards.forEach(card => {
             const listId = card.dataset.listId || MAIN_LIST_ID;
-            card.style.display = listId === listConfig.active ? "" : "none";
+            const shouldShow = listId === listConfig.active;
+            card.style.display = shouldShow ? "" : "none";
+            if (shouldShow) {
+                restoreCardMedia(card).catch(err => console.warn("Restore media failed", err));
+            } else {
+                offloadCardMedia(card);
+            }
         });
         updateResultsCount();
         renderListTabs();
+    }
+
+    function findCardImage(card) {
+        if (!card) return null;
+        return card.querySelector(".thumb-wrap img") || card.querySelector("img");
+    }
+
+    function offloadCardMedia(card) {
+        if (!card || card.classList.contains("skeleton")) return;
+        const img = findCardImage(card);
+        if (!img || img.dataset.mediaOffloaded === "true") return;
+        const taskId = card.dataset.taskId;
+        const currentSrc = img.src || img.getAttribute("src");
+        if (currentSrc && currentSrc.startsWith("blob:")) {
+            revokeObjectUrl(currentSrc);
+            if (img.dataset.usingObjectUrl === "true") {
+                const record = resultsData.get(taskId);
+                if (record && record.objectUrl === currentSrc) {
+                    record.objectUrl = null;
+                }
+                delete img.dataset.usingObjectUrl;
+            }
+        }
+        img.removeAttribute("src");
+        img.src = "";
+        img.dataset.mediaOffloaded = "true";
+        delete img.dataset.restoring;
+        card.classList.add("media-offloaded");
+    }
+
+    async function restoreCardMedia(card) {
+        if (!card || card.classList.contains("skeleton")) return;
+        const img = findCardImage(card);
+        if (!img || img.dataset.mediaOffloaded !== "true" || img.dataset.restoring === "true") return;
+        const taskId = card.dataset.taskId;
+        if (!taskId) {
+            delete img.dataset.mediaOffloaded;
+            return;
+        }
+        img.dataset.restoring = "true";
+        try {
+            let nextSrc = await fetchStoredThumbnail(taskId);
+            let record = resultsData.get(taskId);
+            if (!nextSrc) {
+                const stored = await fetchStoredResultRecord(taskId);
+                if (stored) {
+                    record = rememberResultRecord(taskId, {
+                        meta: stored.meta,
+                        prompt: stored.prompt,
+                        listId: stored.listId || MAIN_LIST_ID,
+                        timestamp: stored.timestamp || Date.now(),
+                        refImageIds: Array.isArray(stored.refImageIds) ? stored.refImageIds : []
+                    });
+                    if (stored.thumbnail) {
+                        nextSrc = stored.thumbnail;
+                    } else if (stored.meta) {
+                        nextSrc = await hydrateMissingThumbnail({
+                            taskId: stored.taskId,
+                            meta: stored.meta,
+                            thumbnail: stored.thumbnail || null
+                        });
+                    }
+                }
+            }
+            if (!nextSrc && record?.meta) {
+                nextSrc = await hydrateMissingThumbnail({
+                    taskId,
+                    meta: record.meta,
+                    thumbnail: null
+                });
+            }
+            if (!nextSrc) {
+                const base64 = await fetchFullBase64(taskId);
+                if (base64) {
+                    try {
+                        const mimeType = record?.meta?.mimeType || DEFAULT_IMAGE_MIME;
+                        nextSrc = `data:${mimeType};base64,${base64}`;
+                    } catch (err) {
+                        console.warn("Failed to rebuild inline preview", err);
+                    }
+                }
+            }
+
+            if (nextSrc instanceof Blob) {
+                nextSrc = URL.createObjectURL(nextSrc);
+            }
+            
+            // Safety: Revoke existing blob if we are replacing it
+            if (img.src && img.src.startsWith("blob:") && img.src !== nextSrc) {
+                revokeObjectUrl(img.src);
+            }
+
+            if (!nextSrc) {
+                img.src = REF_PLACEHOLDER_IMG;
+                delete img.dataset.usingObjectUrl;
+            } else {
+                img.src = nextSrc;
+                if (nextSrc.startsWith("blob:")) {
+                    img.dataset.usingObjectUrl = "true";
+                } else {
+                    delete img.dataset.usingObjectUrl;
+                }
+            }
+            delete img.dataset.mediaOffloaded;
+            card.classList.remove("media-offloaded");
+        } catch (err) {
+            console.warn("Failed to restore media for card", taskId, err);
+        } finally {
+            delete img.dataset.restoring;
+        }
+    }
+
+    function ensureCardVisibilityObserver() {
+        if (cardVisibilityObserver || typeof IntersectionObserver === "undefined") return cardVisibilityObserver;
+        cardVisibilityObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const card = entry.target;
+                if (!card || card.classList.contains("skeleton")) return;
+                if (entry.isIntersecting) {
+                    restoreCardMedia(card).catch(err => console.warn("Restore media failed", err));
+                } else {
+                    offloadCardMedia(card);
+                }
+            });
+        }, {
+            root: resultsEl || null,
+            rootMargin: "256px 0px",
+            threshold: 0.05
+        });
+        return cardVisibilityObserver;
+    }
+
+    function observeCardMedia(card) {
+        if (!card || card.dataset.mediaObserverAttached === "true") return;
+        const observer = ensureCardVisibilityObserver();
+        if (!observer) return;
+        observer.observe(card);
+        card.dataset.mediaObserverAttached = "true";
+    }
+
+    function unobserveCardMedia(card) {
+        if (!cardVisibilityObserver || !card || card.dataset.mediaObserverAttached !== "true") return;
+        cardVisibilityObserver.unobserve(card);
+        delete card.dataset.mediaObserverAttached;
     }
 
     function updateMoveAllControl() {
@@ -2812,13 +2965,13 @@
                 const taskId = card.dataset.taskId;
                 if (!taskId) return;
                 ids.push(taskId);
-                card.remove();
-                removePendingTask(taskId);
                 const record = resultsData.get(taskId);
                 if (record) {
                     fileTargets.push({ taskId, meta: record.meta });
-                    cleanupResultRecord(taskId);
                 }
+                cleanupResultRecord(taskId, card);
+                card.remove();
+                removePendingTask(taskId);
             });
             captureOrderFromDom();
             filterResultsView();
@@ -3206,6 +3359,10 @@
             markResultSeen(taskId);
         }
 
+        if (lightboxImage.src && lightboxImage.src.startsWith('blob:')) {
+             URL.revokeObjectURL(lightboxImage.src);
+        }
+
         if (lightboxImage.dataset.tempUrl) {
             URL.revokeObjectURL(lightboxImage.dataset.tempUrl);
             lightboxImage.removeAttribute("data-tempUrl");
@@ -3419,7 +3576,7 @@
         }
 
         document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
+        if (e.key === "Escape" || e.key.toLowerCase() === "e") {
             if (importOverlayEl && !importOverlayEl.classList.contains("hidden") && importDialogResolver) {
                 cancelImportDialog();
             } else {
@@ -3429,8 +3586,8 @@
 
         if (lightbox.classList.contains("visible")) {
             if (lightboxImage.dataset.context !== 'ref') {
-                if (e.key === "ArrowLeft") navigateLightbox(-1);
-                if (e.key === "ArrowRight") navigateLightbox(1);
+                if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") navigateLightbox(-1);
+                if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") navigateLightbox(1);
             }
             const k = e.key.toLowerCase();
             
@@ -3453,7 +3610,7 @@
                 e.preventDefault();
                 triggerLastViewedLocator();
             }
-            if (keyLower === "j" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            if (keyLower === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 e.preventDefault();
                 setActiveList(REF_LIST_ID);
             }
@@ -3477,6 +3634,39 @@
 
     function isRefSourceSelected(sourceId) {
         return refImages.some(entry => entry.sourceId === sourceId);
+    }
+
+    function isAppOwnedRefEntry(entry) {
+        if (!entry || !entry.sourceId) return false;
+        if (entry.sourceListId === REF_LIST_ID) return true;
+        return entry.sourceId.startsWith("ref-");
+    }
+
+    async function cleanupRefEntryArtifacts(entries = []) {
+        if (!Array.isArray(entries) || !entries.length) return;
+        const ownedEntries = entries.filter(isAppOwnedRefEntry);
+        if (!ownedEntries.length) return;
+        const purgeIds = [];
+        await Promise.all(ownedEntries.map(async (entry) => {
+            try {
+                purgeIds.push(entry.sourceId);
+                await purgeResultRecord(entry.sourceId);
+            } catch (err) {
+                console.warn("Failed to cleanup ref entry", entry?.sourceId, err);
+            }
+        }));
+        let removedDom = false;
+        purgeIds.forEach((taskId) => {
+            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+            if (card) {
+                card.remove();
+                removedDom = true;
+            }
+        });
+        if (removedDom) {
+            captureOrderFromDom();
+            filterResultsView();
+        }
     }
 
     async function persistRefSelections(entriesOverride = null) {
@@ -3731,18 +3921,21 @@
     }
 
     async function removeRefSelection(entryId) {
-        const before = refImages.length;
+        const toRemove = refImages.filter(entry => entry.id === entryId);
+        if (!toRemove.length) return;
         refImages = refImages.filter(entry => entry.id !== entryId);
-        if (refImages.length === before) return;
         renderRefImageList();
         await persistRefSelections();
+        await cleanupRefEntryArtifacts(toRemove);
     }
 
     async function clearRefSelections() {
         if (!refImages.length) return;
+        const toRemove = refImages.slice();
         refImages = [];
         renderRefImageList();
         await persistRefSelections();
+        await cleanupRefEntryArtifacts(toRemove);
     }
 
     async function applyReferenceIdsQuietly(refIds = []) {
@@ -3760,10 +3953,15 @@
             }
         }
         if (!nextEntries.length) return false;
+        const previousEntries = refImages.slice();
         refImages = nextEntries;
         sortRefSelections();
         renderRefImageList();
         await persistRefSelections();
+        const removedEntries = previousEntries.filter(prev => {
+            return !nextEntries.some(next => next.sourceId === prev.sourceId);
+        });
+        await cleanupRefEntryArtifacts(removedEntries);
         return true;
     }
 
@@ -3989,7 +4187,11 @@
       let finalSrc = null;
       let usedObjectUrl = false;
       if (thumbnail) {
-          finalSrc = thumbnail;
+          if (thumbnail instanceof Blob) {
+              finalSrc = URL.createObjectURL(thumbnail);
+          } else {
+              finalSrc = thumbnail;
+          }
       }
       if (!finalSrc && base64) {
           try {
@@ -4123,10 +4325,10 @@
       clearBtn.textContent = "DISCARD";
       clearBtn.addEventListener("click", async (e) => {
         if (!confirmAction(e, "Discard this result permanently?")) return;
+        const record = resultsData.get(taskId);
+        cleanupResultRecord(taskId, card);
         card.remove();
         captureOrderFromDom();
-        const record = resultsData.get(taskId);
-        cleanupResultRecord(taskId);
         filterResultsView();
         try {
             const db = await openDB();
@@ -4159,7 +4361,7 @@
       const extension = safeMeta.extension || mimeTypeToExtension(mimeType);
       safeMeta.mimeType = mimeType;
       safeMeta.extension = extension;
-      return buildResultCardElement({
+      const card = buildResultCardElement({
         taskId: record.taskId,
         listId: record.listId || MAIN_LIST_ID,
         timestamp: record.timestamp || Date.now(),
@@ -4168,6 +4370,8 @@
         thumbnail: record.thumbnail || null,
         base64: record.base64 || null
       });
+      observeCardMedia(card);
+      return card;
     }
 
     async function renderImageCard(taskId, base64, meta, usedPrompt, options = {}) {
@@ -4197,9 +4401,6 @@
           } catch (err) {
               console.warn("Thumbnail generation failed", err);
           }
-      }
-      if (!thumbData && base64) {
-          thumbData = `data:${mimeType};base64,${base64}`;
       }
 
       if (persistToDb) {
@@ -4237,6 +4438,7 @@
           markResultUnseen(taskId);
       }
       filterResultsView();
+      observeCardMedia(card);
 
       if (!skipDiskSave) {
         saveResultToDisk(taskId, base64, mimeType, { 
@@ -4257,58 +4459,53 @@
                 persistResultMetadataSnapshot(taskId);
             }, 500 + Math.random() * 1000); 
         }
+        setTimeout(pruneDomNodes, 100);
         return card;
     }
 
     function generateThumbnail(base64, mimeType = "image/png") {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             if (!base64) {
                 resolve(null);
                 return;
             }
+            try {
+                const res = await fetch(`data:${mimeType};base64,${base64}`);
+                const blob = await res.blob();
+                const bitmap = await createImageBitmap(blob);
+                
+                const maxSize = 320; 
+                let width = bitmap.width;
+                let height = bitmap.height;
 
-            const img = new Image();
-            img.onload = () => {
-                try {
-                    const canvas = document.createElement("canvas");
-                    const maxSize = 320; 
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > maxSize) {
-                            height = Math.round(height * (maxSize / width));
-                            width = maxSize;
-                        }
-                    } else {
-                        if (height > maxSize) {
-                            width = Math.round(width * (maxSize / height));
-                            height = maxSize;
-                        }
+                if (width > height) {
+                    if (width > maxSize) {
+                        height = Math.round(height * (maxSize / width));
+                        width = maxSize;
                     }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    const ctx = canvas.getContext("2d");
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high";
-                    
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    const dataUrl = canvas.toDataURL("image/webp", 0.8);
-                    resolve(dataUrl);
-                } catch (e) {
-                    console.warn("Thumbnail draw failed", e);
-                    resolve(`data:${mimeType};base64,${base64}`);
+                } else {
+                    if (height > maxSize) {
+                        width = Math.round(width * (maxSize / height));
+                        height = maxSize;
+                    }
                 }
-            };
 
-            img.onerror = () => {
-                console.warn("Thumbnail load failed");
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext("2d");
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+                
+                ctx.drawImage(bitmap, 0, 0, width, height);
+                bitmap.close();
+                
+                canvas.toBlob((b) => resolve(b), "image/webp", 0.8);
+            } catch (e) {
+                console.warn("Thumbnail gen failed", e);
                 resolve(null);
-            };
-            img.src = `data:${mimeType};base64,${base64}`;
+            }
         });
     }
 
@@ -4362,23 +4559,64 @@
         }
     }
 
-    function cleanupResultRecord(taskId) {
+    function cleanupResultRecord(taskId, cardHint = null, options = {}) {
         if (!taskId) return;
+        if (typeof cancelledSaveIds !== "undefined") cancelledSaveIds.add(taskId);
         markResultSeen(taskId);
         const record = resultsData.get(taskId);
-        const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
+        const card = cardHint || document.querySelector(`.result-card[data-task-id="${taskId}"]`);
         if (card) {
-            const img = card.querySelector("img");
-            if (img && img.dataset.usingObjectUrl === "true" && img.src.startsWith("blob:")) {
-                revokeObjectUrl(img.src);
-                delete img.dataset.usingObjectUrl;
+            if (!options.keepObserver) {
+                unobserveCardMedia(card);
             }
+            offloadCardMedia(card);
+            const img = card.querySelector("img");
+            if (img && img.src && img.src.startsWith("blob:")) {
+                revokeObjectUrl(img.src);
+            }
+            if (img) delete img.dataset.usingObjectUrl;
         }
         if (record?.objectUrl) {
             revokeObjectUrl(record.objectUrl);
             record.objectUrl = null;
         }
         resultsData.delete(taskId);
+    }
+
+    async function purgeResultRecord(taskId, metaOverride = null) {
+        if (!taskId) return;
+        const runtimeRecord = resultsData.get(taskId);
+        const metaCandidate = metaOverride || runtimeRecord?.meta || null;
+        cleanupResultRecord(taskId);
+        try {
+            const db = await openDB();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
+                const resultStore = tx.objectStore(STORE_RESULTS);
+                const payloadStore = tx.objectStore(STORE_PAYLOADS);
+                resultStore.delete(taskId);
+                if (payloadStore) payloadStore.delete(taskId);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error || new Error("Result cleanup transaction aborted"));
+            });
+        } catch (err) {
+            console.warn("Failed to delete stored result record", err);
+        }
+        let meta = metaCandidate;
+        if (!meta) {
+            try {
+                const stored = await fetchStoredResultRecord(taskId);
+                meta = stored?.meta || null;
+            } catch (err) {
+                console.warn("Failed to load stored metadata for cleanup", err);
+            }
+        }
+        try {
+            await deleteResultFiles(taskId, meta || {});
+        } catch (err) {
+            console.warn("File cleanup failed", err);
+        }
     }
 
     async function updateStoredResult(taskId, patch) {
@@ -4443,23 +4681,72 @@
         await writableMeta.close();
     }
 
-    async function saveResultToDisk(taskId, base64, mimeType, payload) {
+    const saveQueue = [];
+    let isSaving = false;
+    const cancelledSaveIds = new Set();
+
+    async function processSaveQueue() {
+        if (isSaving) return;
+        isSaving = true;
+        while (saveQueue.length > 0) {
+            const { taskId, base64, mimeType, payload, resolve, reject } = saveQueue.shift();
+            if (cancelledSaveIds.has(taskId)) {
+                cancelledSaveIds.delete(taskId);
+                resolve(); 
+                continue;
+            }
+            try {
+                await performDiskSave(taskId, base64, mimeType, payload);
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        }
+        isSaving = false;
+    }
+
+    async function performDiskSave(taskId, base64, mimeType, payload) {
         if (!folderAccessGranted || !workingDirectoryHandle) {
-            showFolderOverlay();
-            return;
+             throw new Error("Folder access lost");
         }
         try {
             const fileBase = `nano-${taskId}`;
             const extension = mimeTypeToExtension(mimeType);
             const imageHandle = await workingDirectoryHandle.getFileHandle(`${fileBase}.${extension}`, { create: true });
             const writableImg = await imageHandle.createWritable();
-            await writableImg.write(base64ToBlob(base64, mimeType));
+            
+            let blob;
+            if (base64 instanceof Blob) {
+                blob = base64;
+            } else {
+                 try {
+                     const res = await fetch(`data:${mimeType};base64,${base64}`);
+                     blob = await res.blob();
+                 } catch (e) {
+                     blob = base64ToBlob(base64, mimeType);
+                 }
+            }
+            
+            await writableImg.write(blob);
             await writableImg.close();
             await writeMetadataFile(taskId, payload);
         } catch (err) {
-            handleFolderAccessError("Save failed, please re-authorize");
+            if (err.name === "NotAllowedError") {
+                 handleFolderAccessError("Save failed, please re-authorize");
+            }
             throw err;
         }
+    }
+
+    function saveResultToDisk(taskId, base64, mimeType, payload) {
+        if (!folderAccessGranted || !workingDirectoryHandle) {
+            showFolderOverlay();
+            return Promise.reject(new Error("No folder access"));
+        }
+        return new Promise((resolve, reject) => {
+            saveQueue.push({ taskId, base64, mimeType, payload, resolve, reject });
+            processSaveQueue();
+        });
     }
 
     async function persistResultMetadataSnapshot(taskId, recordOverride = null) {
@@ -4888,6 +5175,11 @@
           reuseBtn.addEventListener("click", () => applyPendingTaskToForm(taskId));
           footer.appendChild(reuseBtn);
       }
+      const disposeFailureCard = () => {
+        cleanupResultRecord(taskId, card); 
+        card.remove();
+      };
+
       if (typeof retryHandler === "function") {
           const retryBtn = document.createElement("button");
           retryBtn.type = "button";
@@ -4896,7 +5188,7 @@
           retryBtn.addEventListener("click", () => {
               const scheduled = retryHandler();
               if (!scheduled) return;
-              card.remove();
+              disposeFailureCard();
               updateResultsCount();
               captureOrderFromDom();
           });
@@ -4908,7 +5200,7 @@
       removeBtn.textContent = "DISCARD";
       removeBtn.addEventListener("click", (e) => {
         if (!confirmAction(e, "Discard this error card?")) return;
-        card.remove();
+        disposeFailureCard();
         removePendingTask(taskId);
         updateResultsCount();
         captureOrderFromDom();
@@ -4968,6 +5260,7 @@
       });
       if (skeleton) skeleton.replaceWith(card);
       else insertAtResultsTop(card);
+      // observeCardMedia(card); // Removed to prevent leak: error cards have no media
       updateResultsCount();
       filterResultsView();
     }
@@ -5003,6 +5296,19 @@
         }
       }
       return parts;
+    }
+
+    async function buildGenerationRequestBody(promptText, images, resolution, aspectRatio) {
+        const parts = await buildParts(promptText, images);
+        const generationConfig = {
+            imageConfig: { imageSize: resolution },
+            responseModalities: ["TEXT", "IMAGE"],
+        };
+        if (aspectRatio) generationConfig.imageConfig.aspectRatio = aspectRatio;
+        return JSON.stringify({
+            contents: [{ role: "user", parts }],
+            generationConfig,
+        });
     }
 
     function normalizeResourceUrl(resource = "") {
@@ -5281,7 +5587,7 @@
                 signal.addEventListener('abort', () => {
                     clearTimeout(timer);
                     reject(new DOMException('Aborted', 'AbortError'));
-                });
+                }, { once: true });
             }
         });
     }
@@ -5315,25 +5621,18 @@
 
         let attempts = 0;
         const totalAttempts = enableRetry ? (1 + maxRetries) : 1;
-        let requestBody = null;
+        const hasReferenceImages = Array.isArray(refImagesSnapshot) && refImagesSnapshot.length > 0;
+        let requestBodyCache = null;
 
-        try {
-            const parts = await buildParts(prompt, refImagesSnapshot);
-            const generationConfig = {
-                imageConfig: { imageSize: resolution },
-                responseModalities: ["TEXT", "IMAGE"],
-            };
-            if (aspectRatio) generationConfig.imageConfig.aspectRatio = aspectRatio;
-            requestBody = JSON.stringify({
-                contents: [{ role: "user", parts }],
-                generationConfig,
-            });
-        } catch (e) {
-            renderErrorCard(taskId, e, null);
-            activeTasks.delete(taskId);
-            updateGlobalStatus();
-            return;
-        }
+        const getRequestBodyForAttempt = async () => {
+            if (hasReferenceImages) {
+                return buildGenerationRequestBody(prompt, refImagesSnapshot, resolution, aspectRatio);
+            }
+            if (!requestBodyCache) {
+                requestBodyCache = await buildGenerationRequestBody(prompt, refImagesSnapshot, resolution, aspectRatio);
+            }
+            return requestBodyCache;
+        };
 
         while (attempts < totalAttempts) {
             if (controller.signal.aborted) break;
@@ -5348,7 +5647,14 @@
             );
 
             try {
-                const resp = await fetch(
+                let requestBody;
+                try {
+                    requestBody = await getRequestBodyForAttempt();
+                } catch (payloadErr) {
+                    renderErrorCard(taskId, payloadErr, null);
+                    break;
+                }
+                const fetchPromise = fetch(
                     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent",
                     {
                         method: "POST",
@@ -5357,6 +5663,10 @@
                         signal: controller.signal
                     }
                 );
+                if (hasReferenceImages) {
+                    requestBody = null;
+                }
+                const resp = await fetchPromise;
                 if (!resp.ok) {
                     let detail = "";
                     try { const errJson = await resp.json(); detail = errJson.error?.message || JSON.stringify(errJson); } 
@@ -5466,9 +5776,9 @@
           const deleteTargets = ids.map(id => ({ id, meta: resultsData.get(id)?.meta }));
           completedCards.forEach(card => {
               const taskId = card.dataset.taskId;
+              if (taskId) cleanupResultRecord(taskId, card);
               card.remove();
               if (taskId) removePendingTask(taskId);
-              if (taskId) cleanupResultRecord(taskId);
           });
           captureOrderFromDom();
           filterResultsView();
@@ -5484,6 +5794,23 @@
           } catch(e) { console.error(e); }
           await Promise.all(deleteTargets.map(({ id, meta }) => deleteResultFiles(id, meta)));
     });
+
+    function pruneDomNodes() {
+        const container = document.getElementById("results");
+        const cards = Array.from(container.querySelectorAll(".result-card:not(.skeleton)"));
+        if (cards.length <= MAX_DOM_CARDS) return;
+
+        const cardsToRemove = cards.slice(MAX_DOM_CARDS);
+        cardsToRemove.forEach(card => {
+            const taskId = card.dataset.taskId;
+            if (taskId) {
+                cleanupResultRecord(taskId, card);
+            } else {
+                offloadCardMedia(card);
+            }
+            card.remove();
+        });
+    }
 
     // --- NEW RESET LOGIC ---
     resetAppBtn.addEventListener("click", async () => {
