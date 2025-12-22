@@ -1,10 +1,12 @@
 # Nano Banana Pro | Future Lab Edition 🍌
 
-**A lightweight, single-file interface for the Gemini 3 Pro Image Generation Model.**
+**The Ultimate Single-File Interface for Gemini 3 Pro Image.**
 
-**Nano Banana Pro** is a serverless, local-first web application designed for power users who want to experiment with Google's latest Gemini 3 Pro image generation capabilities. It features a "Future Lab" aesthetic and focuses on batch processing, direct local file synchronization, and multimodal inputs.
+**Nano Banana Lab** is a serverless, local-first "Lab Environment" for power users utilizing Google's Gemini 3 Pro image generation model. It combines the simplicity of a single HTML file with the power of a desktop-class asset management system.
 
-> **⚠️ Note:** This is a specialized tool that leverages the **File System Access API**. It currently **only works on Chromium-based browsers** (Chrome, Edge, Brave, Opera) on Desktop. Firefox and Safari are not supported.
+It features **direct disk synchronization**, **advanced batching**, **multimodal reference injection**, and a **persistent local database**.
+
+> **⚠️ System Requirement:** Requires a **Chromium-based browser** (Chrome, Edge, Brave, Opera) on Desktop to leverage the *File System Access API*. Firefox and Safari are not currently supported.
 
 ---
 
@@ -16,101 +18,115 @@
 
 ---
 
-## ✨ Key Features
+## ⚡ Core Features
 
-* **⚡ Serverless & Single-File:** The entire app is contained in one `nano.html` file. No Node.js, Python, or Docker required. Just download and run.
-* **📂 Direct Disk Sync:** Bypasses the browser's "Download" folder. Connects directly to a local folder on your computer to save generated images and metadata (`.json`) automatically in real-time.
-* **🧠 Multimodal Reference Inputs:** Drag and drop reference images to guide the generation (Style Transfer/Composition).
-* **🔄 Parallel Execution & Auto-Retry:** Supports batch generation (up to 20 images at once) with built-in exponential backoff and retry logic for API stability.
-* **🔐 Bring Your Own Key (BYOK):** Your API keys are stored locally in your browser (LocalStorage) and are used to communicate directly with Google's servers. Keys are never sent to any middleman.
-* **🎨 Advanced Workflow:**
-* **Key Rotation:** Add multiple API keys; the app cycles through them to manage rate limits.
-* **Drag & Drop Sorting:** Organize results visually and manage multiple lists.
-* **Lightbox:** High-res zoom and inspection.
-* **Auto-Resume:** IndexedDB caching ensures your session is restored if you accidentally refresh.
+### 1. Zero-Install & Serverless
+
+The entire application lives in one file: `nano.html`. No Node.js, Python, or Docker required. Just download, open, and generate.
+
+### 2. Direct Disk Sync (The "Hard Link")
+
+Unlike web apps that dump files into "Downloads," Nano Banana Pro binds directly to a folder on your drive.
+
+* **Real-time Saving:** Images are written to disk instantly upon generation.
+* **Metadata Pairing:** Every image is saved with a matching `.json` file containing the prompt, parameters, and timestamps.
+* **Two-Way Sync:** The app reads your folder state on startup, syncing your local library with the browser view.
+
+### 3. Parallel Execution Protocol
+
+* **Batch Processing:** Generate up to **20 images** simultaneously.
+* **API Key Rotation:** Add multiple Google API Keys. The system automatically cycles through them to maximize throughput and manage rate limits.
+* **Auto-Retry:** Built-in exponential backoff handles network glitches or API overloading automatically.
+
+### 4. Hybrid Persistence Layer
+
+* **IndexedDB Cache:** A high-performance local database caches your session, allowing you to load thousands of past results without cluttering memory.
+* **State Recovery:** Accidentally closed the tab? Pending tasks and unread results are restored instantly upon reopening.
+
+---
+
+## 🎮 Pro Workflow & Hidden Features
+
+Nano Banana Pro is packed with hidden interactions designed for speed.
+
+### 📂 Advanced List Management
+
+* **Create & Delete:** Create unlimited lists to organize projects (e.g., "Concepts", "Finals").
+* **Drag-to-Reorder:** **Drag the list tabs** themselves to reorder your workspace.
+* **Drag-to-Move:** Drag a result card and drop it onto a specific List Tab to move it there.
+* **Quick Rename:** **Double-click** any list tab to rename it instantly.
+* **Mass Migration:** Use the "Move All" widget at the bottom of the stream to bulk-transfer tasks between lists.
+
+### ⌨️ Keyboard Shortcuts (The "Lab Secrets")
+
+Master the interface with these undocumented hotkeys:
+
+| Key | Action | Description |
+| --- | --- | --- |
+| **`Q`** | **Quick Locator** | Instantly scrolls to and highlights the last viewed image in the feed. |
+| **`J`** | **Jump to Ref** | Switches the active view to the `REF` (Reference) list immediately. |
+| **`Esc`** | **Close / Cancel** | Closes the Lightbox or cancels the Import dialog. |
+| **`←` / `→`** | **Navigation** | Navigate through images inside the Lightbox. |
+| **`Z`** | **Zoom In** | Incrementally zoom into the image (Lightbox only). |
+| **`X`** | **Zoom Out** | Incrementally zoom out (Lightbox only). |
+| **`C`** | **Center/Reset** | Reset zoom level to 100% (Lightbox only). |
+
+### 🖱️ Drag & Drop Mechanics
+
+* **External Import:** Drag images from your OS into the generation panel to use them as **References**.
+* **Self-Referencing:** Drag a *generated result* back into the "Reference Input" zone to iterate on a style.
+* **Sort & Organize:** Drag result cards to reorder them visually within the stream.
+
+---
+
+## ⚙️ Configuration Guide
+
+1. **API Key Setup:**
+* Get your key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+* Enter it in the "Configuration" panel.
+* *Tip:* Click `+ Add Key` to input multiple keys for heavy batch workloads.
+
+
+2. **Reference Inputs (Multimodal):**
+* Supports `image/png`, `image/jpeg`, and `image/webp`.
+* **Limit:** Up to 14 reference images per generation task.
+* **Prompting:** The model treats these as visual context. Use the prompt to describe how to use them (e.g., "Use the composition of image 1 and the style of image 2").
+
+
+3. **Output Files:**
+* Images are saved as `nano-{timestamp}-{random}.png`.
+* Metadata is saved as `nano-{timestamp}-{random}.json`.
 
 
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Troubleshooting
 
-1. **Get an API Key:** You need a Google Gemini API Key with access to the `gemini-3-pro-image-preview` model. Get it here: [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. **Download:** Save the `nano.html` file from this repository to your computer.
-3. **Run:** Double-click `nano.html` to open it in **Google Chrome** or **Microsoft Edge**.
-4. **Authorize:**
-* Click **"Select Output Directory"**.
-* Choose a folder on your computer where you want images to be saved.
-* **Important:** When the browser asks for "Read/Write" permission, click **Allow**.
+**"Output directory not bound"**
 
+* Browsers reset file permissions on restart for security. You must click the "Re-authorize" button in the header each time you open the app.
 
-5. **Generate:** Paste your API key, enter a prompt, and click **Initialize**.
+**"Quota Exceeded" (429 Error)**
 
----
+* This means you hit the Google API rate limit.
+* **Solution:** Add more API keys to the rotation pool or enable "Auto-Retry" in settings.
 
-## ⚙️ Usage Guide
+**"Reset All"**
 
-### 1. Configuration Panel
-
-* **API Key Access:** Paste your Gemini API key. You can add multiple keys; the app will rotate through them automatically for batch jobs.
-* **Retry Protocol:** Enable "Auto-Retry" to handle network hiccups or API rate limits automatically.
-* **Resolution & Ratio:** Select from standard presets (1K/2K/4K) and aspect ratios (1:1, 16:9, etc.).
-* **Batch Count:** Set how many images to generate in parallel (Max 20).
-
-### 2. Reference Input (Multimodal)
-
-* You can influence the generation by providing reference images.
-* **Drag & Drop:** Drag images from your desktop into the "Reference Input" zone.
-* **Internal Drag:** You can even drag a *generated result* back into the reference zone to iterate on a style.
-
-### 3. Output & Management
-
-* **The Stream:** Generated images appear in the main results panel.
-* **Lists:** Create multiple lists (tabs) to organize your generations (e.g., "Architecture", "Character Design").
-* **Drag Sorting:** Drag images to reorder them or move them between lists.
-* **Import:** Use the "Import Image" button to bring external images into your workspace for organization.
+* The hidden **⚠ RESET ALL** button (top right) performs a factory reset. It wipes `LocalStorage` (settings/keys) and `IndexedDB` (history). Use with caution.
 
 ---
 
-## 🛠️ Advanced / Hacking
+## 🔒 Privacy & Architecture
 
-Since this is a single HTML file, it is extremely easy to modify.
-
-* **Changing the Model:**
-The tool is currently hardcoded to use `gemini-3-pro-image-preview`. If Google changes the endpoint name in the future, open `nano.html` in any text editor (Notepad, VS Code), search for `gemini-3-pro-image-preview`, and replace it with the new model name.
-* **CSS Customization:**
-The `<style>` block at the top of the file contains all the CSS variables (`--primary-grad-start`, etc.). Feel free to tweak the colors to match your preference.
-
----
-
-## ⚠️ Known Limitations
-
-1. **Browser Compatibility:** Strictly requires a browser that supports the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API).
-* ✅ Chrome, Edge, Opera, Brave (Desktop)
-* ❌ Firefox, Safari, Mobile Browsers
-
-
-2. **Network Requirements:** The tool makes direct `fetch` calls to `generativelanguage.googleapis.com`. Ensure your network environment can access Google services directly.
-3. **Permissions:** You must re-confirm directory access every time you completely restart the browser (a security feature of the web platform).
-
----
-
-## 🔒 Privacy Policy
-
-* **Local Only:** This application runs entirely in your browser.
-* **No Analytics:** No tracking scripts or analytics are included.
-* **Key Safety:** Your API Keys are stored in `LocalStorage` on your machine. They are sent *only* to Google's official API endpoints.
-* **File Access:** The app only has access to the specific folder you explicitly authorize.
-
----
-
-## ⚖️ Disclaimer
-
-* **Vibe Coding:** This project is a result of vibe coding (developed using AI coding tools) and is provided for reference only.
-* **Experimental:** As a "Lab Edition", it is intended for testing and personal use.
+* **Local-First:** All logic runs in your browser.
+* **Direct Connection:** Requests go directly from your browser to `generativelanguage.googleapis.com`. No middleman servers.
+* **Data Ownership:** Your keys and images never leave your control.
 
 ---
 
 ## 📄 License
 
-This project is open-source and available under the **MIT License**. Feel free to fork, modify, and distribute.
+**MIT License**. Open source and free to modify.
+*Built with Vibe Coding.*
