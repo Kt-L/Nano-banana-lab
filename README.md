@@ -49,13 +49,16 @@ Unlike web apps that dump files into "Downloads," Nano Banana Pro binds directly
 
 Nano Banana Pro is packed with hidden interactions designed for speed.
 
-### 📂 Advanced List Management
+### 📂 Advanced List Management & Reuse
 
 * **Create & Delete:** Create unlimited lists to organize projects (e.g., "Concepts", "Finals").
-* **Drag-to-Reorder:** **Drag the list tabs** themselves to reorder your workspace.
-* **Drag-to-Move:** Drag a result card and drop it onto a specific List Tab to move it there.
-* **Quick Rename:** **Double-click** any list tab to rename it instantly.
-* **Mass Migration:** Use the "Move All" widget at the bottom of the stream to bulk-transfer tasks between lists.
+* **Smart Reuse:**
+    *   **Click `REUSE`:** Loads the prompt, settings, and reference images from that card.
+    *   **`Cmd/Ctrl` + Click `REUSE`:** Loads **only the Prompt** (ignoring reference images and settings).
+*   **Drag-to-Reorder:** **Drag the list tabs** themselves to reorder your workspace.
+*   **Drag-to-Move:** Drag a result card and drop it onto a specific List Tab to move it there.
+*   **Quick Rename:** **Double-click** any list tab to rename it instantly.
+*   **Mass Migration:** Press `M` to open the **List Transfer** overlay and move every task in the current list to another list.
 
 ### ⌨️ Keyboard Shortcuts (The "Lab Secrets")
 
@@ -63,17 +66,39 @@ Master the interface with these undocumented hotkeys:
 
 | Key | Action | Description |
 | --- | --- | --- |
+| **`R`** | **Compress** | Opens the **Compression Lab** to resize/optimize the current image. |
+| **`V`** | **Copy** | Copies the current image to your system Clipboard. |
 | **`Q`** | **Quick Locator** | Instantly scrolls to and highlights the last viewed image in the feed. |
 | **`F`** | **Jump to Ref** | Switches the active view to the `REF` (Reference) list immediately. |
-| **`Esc`(E)** | **Close / Cancel** | Closes the Lightbox or cancels the Import dialog. |
-| **`←`(A) / `→`(D)** | **Navigation** | Navigate through images inside the Lightbox. |
+| **`M`** | **Move Overlay** | Toggles the "Move to List" panel (when not in Lightbox). |
+| **`W`** | **Compare Mode** | Enter split-view compare selection; pick two cards to compare. |
+| **`Esc`(E)** | **Close / Cancel** | Closes the Lightbox, Compression Lab, or cancels Import dialogs. |
+| **`←`(A) / `→`(D)** | **Navigation** | Navigate through pages or images. |
 | **`Z`** | **Zoom In** | Incrementally zoom into the image (Lightbox only). |
 | **`X`** | **Zoom Out** | Incrementally zoom out (Lightbox only). |
 | **`C`** | **Center/Reset** | Reset zoom level to 100% (Lightbox only). |
 
+### 🧪 Split-View Compare Mode (New)
+
+Press **`W`** to enter Compare Mode, then click any two result cards.
+
+*   **Live Scrub:** Drag the vertical divider to compare before/after or variant differences.
+*   **Zoom & Pan:** Scroll to zoom; drag to pan when zoomed.
+*   **Exit:** `Esc` or `E`.
+
+### 🖼️ Compression & Resample Lab (New)
+
+A built-in studio for post-processing your generations without leaving the app. Open any image in the Lightbox and press **`R`**.
+
+*   **Smart Resize:** Scale by percentage (e.g., 50%) or define exact pixel dimensions.
+*   **Live Split-View:** Drag the divider to compare the original vs. compressed result in real-time.
+*   **Non-Destructive:** Choose to **Replace** the original file to save space, or **Save as New** to keep both.
+*   **Metrics:** See exactly how much disk space you're saving before committing.
+
 ### 🖱️ Drag & Drop Mechanics
 
 * **External Import:** Drag images from your OS into the generation panel to use them as **References**.
+* **Output Import:** Drag images into the output stream (or use `IMPORT IMAGE`) to create cards in the active list.
 * **Self-Referencing:** Drag a *generated result* back into the "Reference Input" zone to iterate on a style.
 * **Sort & Organize:** Drag result cards to reorder them visually within the stream.
 
@@ -90,6 +115,7 @@ Master the interface with these undocumented hotkeys:
 2. **Reference Inputs (Multimodal):**
 * Supports `image/png`, `image/jpeg`, and `image/webp`.
 * **Limit:** Up to 14 reference images per generation task.
+* **Clipboard Paste:** Use the `PASTE` button to add an image from your clipboard.
 * **Prompting:** The model treats these as visual context. Use the prompt to describe how to use them (e.g., "Use the composition of image 1 and the style of image 2").
 
 
