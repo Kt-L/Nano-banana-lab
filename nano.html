@@ -1182,9 +1182,12 @@
       </div>
 
       <div style="margin-top: 4px; margin-bottom: 12px;">
-        <label for="prompt">PROMPT DATA</label>
-        <textarea id="prompt" placeholder="Input generation parameters..."></textarea>
-      </div>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+    <label for="prompt" style="margin-bottom: 0;">PROMPT DATA</label>
+    <button id="clearPromptBtn" class="btn-mini" type="button" style="font-size: 10px; padding: 2px 8px; height: auto; border-color: #e2e8f0; color: #64748b;">CLEAR</button>
+  </div>
+  <textarea id="prompt" placeholder="Input generation parameters..."></textarea>
+</div>
 
       <div style="margin-top: 12px;">
         <label>REFERENCE INPUT (Multi-Modal)</label>
@@ -4025,6 +4028,7 @@
         const safeMime = mimeType || DEFAULT_IMAGE_MIME;
         const meta = buildRefMeta(safeMime, label, metaExtras);
         const timestamp = Date.now();
+        const shouldSkipSave = metaExtras.skipDiskSave !== undefined ? metaExtras.skipDiskSave : !folderAccessGranted;
         const thumbOverride = metaExtras.thumbnail || null;
         await renderImageCard(taskId, base64Data, meta, label || "", {
             listId: REF_LIST_ID,
@@ -4284,13 +4288,13 @@
         const refMeta = buildRefMeta(mimeType || DEFAULT_IMAGE_MIME, fileName || "Reference", {
             ...metaExtras,
             source: metaExtras.source || "ref-import",
-            originalName: metaExtras.originalName || fileName || "",
-            skipDiskSave: false
+            originalName: metaExtras.originalName || fileName || ""
         });
         const taskId = await createRefAssetFromBase64(base64Data, mimeType, fileName, {
             ...metaExtras,
             source: metaExtras.source || "ref-import",
             originalName: metaExtras.originalName || fileName || "",
+            skipDiskSave: false,
             thumbnail: thumbData
         });
         if (taskId) {
@@ -4611,15 +4615,28 @@
       reuseBtn.type = "button";
       reuseBtn.className = "btn-mini info";
       reuseBtn.textContent = "REUSE";
-      reuseBtn.addEventListener("click", () => {
-          promptInput.value = prompt || "";
-          promptInput.dispatchEvent(new Event("input", { bubbles: true }));
-          const record = resultsData.get(taskId);
-          const refIds = Array.isArray(record?.refImageIds) ? record.refImageIds : [];
-          if (refIds.length) {
-              applyReferenceIdsQuietly(refIds).catch(console.error);
-          }
-      });
+      reuseBtn.addEventListener("click", async () => {
+          const record0 = resultsData.get(taskId);
+  	promptInput.value = (record0?.prompt ?? prompt ?? "");
+  	promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+  	let refIds = Array.isArray(record0?.refImageIds) ? record0.refImageIds : [];
+  	if (!refIds.length) {
+    	const stored = await fetchStoredResultRecord(taskId);
+    	if (stored) {
+      	rememberResultRecord(taskId, {
+        	meta: stored.meta || {},
+        	prompt: stored.prompt || "",
+        	listId: stored.listId || MAIN_LIST_ID,
+        	timestamp: stored.timestamp || Date.now(),
+        	refImageIds: Array.isArray(stored.refImageIds) ? stored.refImageIds : []
+      	});
+      	refIds = Array.isArray(stored.refImageIds) ? stored.refImageIds : [];
+    	}
+  	}
+
+  	await applyReferenceIdsQuietly(refIds);
+	});
 
       const downloadLink = document.createElement("a");
       downloadLink.download = `nano-banana-${taskId}.${extension}`;
@@ -4757,7 +4774,9 @@
       if (isRestoring) {
           syncCardUnseenClass(taskId);
       } else {
+		if (listId !== REF_LIST_ID) {
           markResultUnseen(taskId);
+	}
       }
       renderActivePage({ reason: "result-render" });
 
@@ -6121,6 +6140,17 @@
             }
         }
     });
+
+	const clearPromptBtn = document.getElementById("clearPromptBtn");
+    	if (clearPromptBtn) {
+        clearPromptBtn.addEventListener("click", () => {
+            if (promptInput) {
+                promptInput.value = "";
+                promptInput.focus();
+                promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
+    }
 
     // Run Start
     initApp();
