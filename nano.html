@@ -493,15 +493,13 @@
     }
 
     .results-scroll {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
       position: relative;
+      overflow: visible;
     }
 
     @media (min-width: 961px) {
       .results-panel {
-        max-height: calc(100vh - 180px);
+        max-height: none;
       }
     }
 
@@ -542,91 +540,32 @@
     }
     .results-drop-hint span { display: block; font-size: 11px; font-weight: 500; color: #94a3b8; margin-top: 6px; }
     .results-drop-hint.visible { display: flex; }
-    .results-load-more {
-      margin: 16px 0 8px;
-      padding: 12px;
+    .results-footer {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .results-pagination {
+      padding: 10px 12px;
       border: 1px dashed var(--panel-border);
       border-radius: var(--radius-panel);
       background: rgba(248, 250, 252, 0.9);
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 12px;
     }
-    .results-load-more.hidden { display: none; }
-    .load-more-btn {
-      border: none;
-      border-radius: var(--radius-btn);
-      padding: 8px 20px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-      color: var(--text-accent);
-      background: linear-gradient(120deg, #fef3c7, #fde68a);
-      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .load-more-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(249, 115, 22, 0.35); }
-    .load-more-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
-    .load-more-hint {
+
+    .page-indicator {
       font-size: 11px;
       color: var(--text-sub);
       text-transform: uppercase;
       letter-spacing: 0.08em;
-    }
-
-    .list-move-card {
-      border-radius: 8px;
-      border: 1px dashed #cbd5e1;
-      background: #f8fafc;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-height: 0;
-    }
-    .list-move-card-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-accent);
-      letter-spacing: 0.05em;
-    }
-    .list-move-card-desc {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin: 0;
-    }
-    .list-move-card-controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .list-move-card-controls select {
-      flex: 1;
-      border-radius: var(--radius-input);
-      border: 1px solid #cbd5e1;
-      padding: 6px 8px;
-      font-size: 12px;
-      font-family: var(--font-sans);
-      background: #fff;
-      color: var(--text-main);
-      min-width: 0;
-    }
-    .list-move-card-controls select:disabled {
-      background: #f1f5f9;
-      color: #94a3b8;
-    }
-    .list-move-card-hint {
-      font-size: 11px;
-      color: var(--text-sub);
       font-family: var(--font-mono);
+      min-width: 90px;
+      text-align: center;
     }
 
     .result-card {
@@ -1069,6 +1008,68 @@
       justify-content: flex-end;
       gap: 12px;
     }
+
+    .list-move-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1150;
+    }
+    .list-move-overlay.hidden { display: none; }
+    .list-move-panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px 24px;
+      width: min(420px, calc(100% - 48px));
+      box-shadow: 0 20px 60px rgba(15,23,42,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .list-move-panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-accent);
+      letter-spacing: 0.08em;
+    }
+    .list-move-panel-desc {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+    .list-move-panel-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .list-move-panel-controls select {
+      flex: 1;
+      border-radius: var(--radius-input);
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+      background: #fff;
+      color: var(--text-main);
+      min-width: 0;
+    }
+    .list-move-panel-controls select:disabled {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+    .list-move-panel-hint {
+      font-size: 11px;
+      color: var(--text-sub);
+      font-family: var(--font-mono);
+    }
+    .list-move-panel-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
@@ -1235,26 +1236,35 @@
           <div id="resultsDropHint" class="results-drop-hint" aria-hidden="true">
             Drag images here<span>or click the "Import" button</span>
           </div>
-          <div id="listMoveAllCard" class="list-move-card" aria-live="polite">
-            <div class="list-move-card-title">LIST TRANSFER</div>
-            <p class="list-move-card-desc">Move every task from the current list to another list.</p>
-            <div class="list-move-card-controls">
-              <select id="listMoveAllSelect">
-                <option value="">No other lists yet</option>
-              </select>
-              <button id="listMoveAllBtn" class="btn-mini info" type="button">MOVE ALL</button>
-            </div>
-            <div class="list-move-card-hint" id="listMoveAllHint">No tasks in the current list</div>
-          </div>
-          <div id="resultsLoadMore" class="results-load-more hidden">
-            <button id="loadMoreBtn" type="button" class="load-more-btn">LOAD HISTORY</button>
-            <div id="loadMoreHint" class="load-more-hint">History loads in batches to protect memory</div>
-          </div>
+        </div>
+      </div>
+      <div class="results-footer">
+        <div id="resultsPagination" class="results-pagination" aria-label="Pagination controls">
+          <button id="pagePrevBtn" class="btn-mini" type="button">Prev</button>
+          <div id="pageIndicator" class="page-indicator">Page 1 / 1</div>
+          <button id="pageNextBtn" class="btn-mini" type="button">Next</button>
         </div>
       </div>
       <input type="file" id="importInput" accept="image/*" multiple style="display:none;" />
     </section>
   </main>
+
+  <div id="listMoveOverlay" class="list-move-overlay hidden" aria-modal="true" role="dialog">
+    <div class="list-move-panel" role="document">
+      <div class="list-move-panel-title">LIST TRANSFER</div>
+      <p class="list-move-panel-desc">Move every task from the current list to another list.</p>
+      <div class="list-move-panel-controls">
+        <select id="listMoveAllSelect">
+          <option value="">No other lists yet</option>
+        </select>
+      </div>
+      <div class="list-move-panel-hint" id="listMoveAllHint">No tasks in the current list</div>
+      <div class="list-move-panel-actions">
+        <button id="listMoveCancelBtn" class="btn-mini danger" type="button">Cancel</button>
+        <button id="listMoveAllBtn" class="btn-mini info" type="button">Move All</button>
+      </div>
+    </div>
+  </div>
 
   <div id="lightbox" class="lightbox" aria-hidden="true">
     <div class="lightbox-inner">
@@ -1280,8 +1290,12 @@
     const REF_LIST_ID = "ref";
     const DIR_PICKER_ID = "nano-banana-workspace";
     const RESULT_TIMESTAMP_INDEX = "byTimestamp";
-    const RESULT_PAGE_SIZE = 300;
-    const MAX_DOM_CARDS = 1000;
+    const PAGE_SIZE = 9;
+    const TASK_TYPES = {
+        RESULT: "result",
+        SKELETON: "skeleton",
+        FAILURE: "failure"
+    };
 
     // Initialize IndexedDB
     let dbInstance = null;
@@ -1293,6 +1307,12 @@
     const DEFAULT_IMAGE_MIME = "image/png";
     const DISK_IMAGE_EXTENSIONS = ["png","jpg","jpeg","webp","gif","bmp"];
     const resultsData = new Map();
+    const taskIndex = new Map();
+    const taskRuntimeInfo = new Map();
+    const pageState = {
+        pageSize: PAGE_SIZE,
+        pageByListId: new Map()
+    };
     const MAX_RUNTIME_RESULT_RECORDS = 600;
     const UNSEEN_RESULTS_STORAGE_KEY = "nano_banana_unseen_results_v1";
     let unseenResultIds = loadStoredUnseenResultIds();
@@ -1311,6 +1331,33 @@
         enforceResultsCacheLimit();
         return record;
     }
+    function upsertTaskIndexEntry(taskId, payload = {}) {
+        if (!taskId) return null;
+        const current = taskIndex.get(taskId) || {};
+        const next = {
+            listId: payload.listId || current.listId || MAIN_LIST_ID,
+            timestamp: payload.timestamp || current.timestamp || Date.now(),
+            type: payload.type || current.type || TASK_TYPES.RESULT
+        };
+        taskIndex.set(taskId, next);
+        return next;
+    }
+    function removeTaskIndexEntry(taskId) {
+        if (!taskId) return;
+        taskIndex.delete(taskId);
+        taskRuntimeInfo.delete(taskId);
+    }
+    function setTaskRuntimeInfo(taskId, payload = {}) {
+        if (!taskId) return null;
+        const current = taskRuntimeInfo.get(taskId) || {};
+        const next = { ...current, ...payload };
+        taskRuntimeInfo.set(taskId, next);
+        return next;
+    }
+    function getTaskRuntimeInfo(taskId) {
+        if (!taskId) return null;
+        return taskRuntimeInfo.get(taskId) || null;
+    }
     function enforceResultsCacheLimit() {
         if (resultsData.size <= MAX_RUNTIME_RESULT_RECORDS) return;
         const keys = Array.from(resultsData.keys());
@@ -1318,8 +1365,7 @@
         for (let i = 0; i < deleteCount; i++) {
             const taskId = keys[i];
             const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
-            // We use { keepObserver: true } because the card stays in the DOM (up to MAX_DOM_CARDS).
-            // This ensures IntersectionObserver can still trigger restoreCardMedia when scrolled into view.
+            // We use { keepObserver: true } because cards remain in the DOM when visible.
             cleanupResultRecord(taskId, card, { keepObserver: true });
         }
     }
@@ -1508,7 +1554,7 @@
             maxRetries: typeof record.maxRetries === "number" ? record.maxRetries : 0,
             apiKey
         };
-        createSkeletonCard(newTaskId);
+        createSkeletonCard(newTaskId, { listId: record.listId || MAIN_LIST_ID });
         registerPendingTask(newTaskId, newConfig, { listId: record.listId || MAIN_LIST_ID, status: "RUNNING" });
         executeTask(newTaskId, newConfig).catch(console.error);
         removePendingTask(taskId);
@@ -1517,6 +1563,7 @@
     function restorePendingTaskCards() {
         if (!pendingTaskRecords.size) return;
         let mutated = false;
+        let hasEntries = false;
         pendingTaskRecords.forEach((record, taskId) => {
             if (!record) return;
             if (record.status !== "FAILED") {
@@ -1525,22 +1572,24 @@
                 record.failureAt = Date.now();
                 mutated = true;
             }
-            if (!document.querySelector(`.result-card[data-task-id="${taskId}"]`)) {
-                const card = buildFailureCardElement({
-                    taskId,
-                    errorMessage: record.errorMessage || "Task failed.",
-                    retryHandler: () => retryPendingTask(taskId),
-                    allowReuse: true,
-                    listId: record.listId || MAIN_LIST_ID,
-                    timestamp: record.createdAt || Date.now()
-                });
-                insertAtResultsTop(card);
-            }
+            upsertTaskIndexEntry(taskId, {
+                listId: record.listId || MAIN_LIST_ID,
+                timestamp: record.createdAt || Date.now(),
+                type: TASK_TYPES.FAILURE
+            });
+            setTaskRuntimeInfo(taskId, {
+                errorMessage: record.errorMessage || "Task failed.",
+                allowReuse: true,
+                listId: record.listId || MAIN_LIST_ID,
+                timestamp: record.createdAt || Date.now()
+            });
+            ensureTaskInOrder(taskId, "start");
+            hasEntries = true;
         });
         if (mutated) persistPendingTaskRecords();
-        filterResultsView();
-        updateResultsCount();
-        captureOrderFromDom();
+        if (hasEntries) {
+            renderActivePage({ reason: "restore-pending" });
+        }
     }
     let cardOrder = [];
     let cardOrderDirty = false;
@@ -1820,15 +1869,69 @@
         return cardOrderSavePromise;
     }
 
+    function ensureTaskInOrder(taskId, position = "end") {
+        if (!taskId) return;
+        const existingIndex = cardOrder.indexOf(taskId);
+        if (existingIndex !== -1) {
+            if (position === "start" && existingIndex !== 0) {
+                cardOrder.splice(existingIndex, 1);
+                cardOrder.unshift(taskId);
+                markCardOrderDirty();
+            }
+            return;
+        }
+        if (position === "start") {
+            cardOrder.unshift(taskId);
+        } else {
+            cardOrder.push(taskId);
+        }
+        markCardOrderDirty();
+    }
+
+    function removeTaskFromOrder(taskId) {
+        if (!taskId) return;
+        const index = cardOrder.indexOf(taskId);
+        if (index === -1) return;
+        cardOrder.splice(index, 1);
+        markCardOrderDirty();
+    }
+
+    function applyVisibleOrderToGlobal(listId, visibleIds) {
+        if (!listId || !Array.isArray(visibleIds) || !visibleIds.length) return;
+        if (!cardOrder.length) {
+            cardOrder = Array.from(taskIndex.entries())
+                .filter(([, meta]) => meta)
+                .sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0))
+                .map(([taskId]) => taskId);
+        }
+        const orderedVisible = visibleIds.filter(id => taskIndex.get(id)?.listId === listId);
+        if (!orderedVisible.length) return;
+        const targetSet = new Set(orderedVisible);
+        let cursor = 0;
+        const updated = cardOrder.map(id => {
+            const meta = taskIndex.get(id);
+            if (!meta || meta.listId !== listId || !targetSet.has(id)) return id;
+            const nextId = orderedVisible[cursor++];
+            return nextId || id;
+        });
+        orderedVisible.forEach(id => {
+            if (!updated.includes(id)) updated.unshift(id);
+        });
+        const changed = updated.length !== cardOrder.length || updated.some((id, idx) => id !== cardOrder[idx]);
+        if (changed) {
+            cardOrder = updated;
+            markCardOrderDirty();
+        }
+    }
+
     function captureOrderFromDom() {
         if (!resultsEl) return;
-        prioritizeActiveTaskCards();
+        const activeListId = listConfig.active || MAIN_LIST_ID;
         const ids = Array.from(resultsEl.querySelectorAll(".result-card"))
             .map(card => card.dataset.taskId)
             .filter(Boolean);
-        const changed = cardOrder.length !== ids.length || cardOrder.some((id, idx) => id !== ids[idx]);
-        cardOrder = ids;
-        if (changed) markCardOrderDirty();
+        if (!ids.length) return;
+        applyVisibleOrderToGlobal(activeListId, ids);
     }
 
     function getCardTimestampValue(card) {
@@ -1843,41 +1946,241 @@
     }
 
     function applyStoredCardOrder() {
+        renderActivePage({ reason: "order" });
+    }
+
+    function getOrderedTaskIdsForList(listId) {
+        const targetListId = listId || MAIN_LIST_ID;
+        const baseOrder = cardOrder.length
+            ? cardOrder
+            : Array.from(taskIndex.entries())
+                .filter(([, meta]) => meta)
+                .sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0))
+                .map(([taskId]) => taskId);
+        const activeIds = [];
+        const regularIds = [];
+        baseOrder.forEach(taskId => {
+            const meta = taskIndex.get(taskId);
+            if (!meta || meta.listId !== targetListId) return;
+            if (meta.type === TASK_TYPES.SKELETON) activeIds.push(taskId);
+            else regularIds.push(taskId);
+        });
+        return activeIds.concat(regularIds);
+    }
+
+    function ensurePageIndex(listId) {
+        if (!listId) return 0;
+        if (!pageState.pageByListId.has(listId)) {
+            pageState.pageByListId.set(listId, 0);
+        }
+        return pageState.pageByListId.get(listId) || 0;
+    }
+
+    function setPageIndex(listId, pageIndex) {
+        if (!listId) return;
+        const safeIndex = Math.max(0, pageIndex || 0);
+        pageState.pageByListId.set(listId, safeIndex);
+    }
+
+    function getTotalPagesForList(listId) {
+        const count = getOrderedTaskIdsForList(listId).length;
+        return Math.max(1, Math.ceil(count / pageState.pageSize));
+    }
+
+    function clampPageIndex(listId, pageIndex) {
+        const totalPages = getTotalPagesForList(listId);
+        const clamped = Math.min(Math.max(pageIndex, 0), totalPages - 1);
+        setPageIndex(listId, clamped);
+        return { pageIndex: clamped, totalPages };
+    }
+
+    function updatePaginationControls(listId, pageIndex, totalPages) {
+        if (pageIndicator) {
+            pageIndicator.textContent = `Page ${pageIndex + 1} / ${totalPages}`;
+        }
+        if (pagePrevBtn) {
+            pagePrevBtn.disabled = pageIndex <= 0;
+        }
+        if (pageNextBtn) {
+            pageNextBtn.disabled = pageIndex >= totalPages - 1;
+        }
+    }
+
+    function clearRenderedCards() {
         if (!resultsEl) return;
-        const cards = Array.from(resultsEl.querySelectorAll(".result-card")).filter(card => card.dataset.taskId);
-        if (!cards.length) return;
-        if (!cardOrder.length) {
-            const sorted = cards.slice().sort((a, b) => getCardTimestampValue(b) - getCardTimestampValue(a));
+        const cards = Array.from(resultsEl.querySelectorAll(".result-card"));
+        cards.forEach(card => {
+            const taskId = card.dataset.taskId;
+            if (taskId) {
+                cleanupResultRecord(taskId, card, {
+                    keepObserver: true,
+                    keepRecord: false,
+                    preserveUnseen: true,
+                    skipSaveCancel: true,
+                    skipRecordUrlCleanup: true
+                });
+            }
+            card.remove();
+        });
+    }
+
+    async function fetchRenderPayload(taskId) {
+        if (!taskId) return null;
+        let record = resultsData.get(taskId);
+        let stored = null;
+        if (!record || !record.meta) {
+            stored = await fetchStoredResultRecord(taskId);
+            if (stored) {
+                record = rememberResultRecord(taskId, {
+                    meta: stored.meta || {},
+                    prompt: stored.prompt || "",
+                    listId: stored.listId || MAIN_LIST_ID,
+                    timestamp: stored.timestamp || Date.now(),
+                    refImageIds: Array.isArray(stored.refImageIds) ? stored.refImageIds : []
+                });
+            }
+        }
+        const meta = record?.meta || stored?.meta || {};
+        const prompt = record?.prompt || stored?.prompt || "";
+        const timestamp = record?.timestamp || stored?.timestamp || Date.now();
+        const listId = record?.listId || stored?.listId || MAIN_LIST_ID;
+        const indexMeta = taskIndex.get(taskId);
+        if (indexMeta && indexMeta.listId !== listId) {
+            indexMeta.listId = listId;
+            taskIndex.set(taskId, indexMeta);
+        }
+        let thumbnail = record?.thumbnail || null;
+        if (!thumbnail && stored?.thumbnail) {
+            thumbnail = stored.thumbnail;
+        }
+        if (!thumbnail) {
+            thumbnail = await fetchStoredThumbnail(taskId);
+        }
+        if (!thumbnail) {
+            const metaCandidate = stored?.meta || record?.meta;
+            if (metaCandidate) {
+                thumbnail = await hydrateMissingThumbnail({
+                    taskId,
+                    meta: metaCandidate,
+                    thumbnail: null
+                });
+            }
+        }
+        return { taskId, meta, prompt, timestamp, listId, thumbnail };
+    }
+
+    function resolveFailureCardOptions(taskId) {
+        const pending = getPendingTaskRecord(taskId);
+        if (pending) {
+            return {
+                taskId,
+                errorMessage: pending.errorMessage || "Task failed.",
+                retryHandler: () => retryPendingTask(taskId),
+                allowReuse: true,
+                listId: pending.listId || MAIN_LIST_ID,
+                timestamp: pending.createdAt || Date.now()
+            };
+        }
+        const runtime = getTaskRuntimeInfo(taskId) || {};
+        return {
+            taskId,
+            errorMessage: runtime.errorMessage || "Task failed.",
+            allowReuse: !!runtime.allowReuse,
+            listId: runtime.listId || taskIndex.get(taskId)?.listId || MAIN_LIST_ID,
+            timestamp: runtime.timestamp || taskIndex.get(taskId)?.timestamp || Date.now()
+        };
+    }
+
+    async function renderActivePage(options = {}) {
+        if (!resultsEl) return;
+        const preserveScroll = options.preserveScroll === true;
+        const scrollRoot = preserveScroll
+            ? (() => {
+                const candidate = resultsEl.closest(".results-scroll");
+                if (candidate && candidate.scrollHeight > candidate.clientHeight) return candidate;
+                return document.scrollingElement || document.documentElement;
+            })()
+            : null;
+        const scrollState = (preserveScroll && scrollRoot)
+            ? { top: scrollRoot.scrollTop, left: scrollRoot.scrollLeft, height: resultsEl.offsetHeight }
+            : null;
+        if (scrollState) resultsEl.style.minHeight = `${scrollState.height}px`;
+        try {
+            const activeListId = listConfig.active || MAIN_LIST_ID;
+            const orderedIds = getOrderedTaskIdsForList(activeListId);
+            const initialPageIndex = ensurePageIndex(activeListId);
+            const { pageIndex, totalPages } = clampPageIndex(activeListId, initialPageIndex);
+            const start = pageIndex * pageState.pageSize;
+            const pageTaskIds = orderedIds.slice(start, start + pageState.pageSize);
+
+            const cards = await Promise.all(pageTaskIds.map(async (taskId) => {
+                const meta = taskIndex.get(taskId);
+                if (!meta) return null;
+                if (meta.type === TASK_TYPES.SKELETON) {
+                    return buildSkeletonCardElement(taskId);
+                }
+                if (meta.type === TASK_TYPES.FAILURE) {
+                    const runtime = getTaskRuntimeInfo(taskId);
+                    if (runtime?.status === "cancelled") {
+                        return buildCancelledCardElement({
+                            taskId,
+                            listId: meta.listId || MAIN_LIST_ID,
+                            timestamp: meta.timestamp || Date.now()
+                        });
+                    }
+                    return buildFailureCardElement(resolveFailureCardOptions(taskId));
+                }
+                const payload = await fetchRenderPayload(taskId);
+                if (!payload) return null;
+                return buildResultCardElement({
+                    taskId,
+                    listId: payload.listId || MAIN_LIST_ID,
+                    timestamp: payload.timestamp || Date.now(),
+                    meta: payload.meta || {},
+                    prompt: payload.prompt || "",
+                    thumbnail: payload.thumbnail || null
+                });
+            }));
+
+            clearRenderedCards();
+
             const fragment = document.createDocumentFragment();
-            sorted.forEach(card => fragment.appendChild(card));
-            insertBeforeListMoveCard(fragment);
-            const newOrder = sorted.map(card => card.dataset.taskId);
-            const changed = cardOrder.length !== newOrder.length || cardOrder.some((id, idx) => id !== newOrder[idx]);
-            cardOrder = newOrder;
-            if (changed) markCardOrderDirty();
+            cards.forEach(card => {
+                if (card) fragment.appendChild(card);
+            });
+            resultsEl.appendChild(fragment);
+
+            updatePaginationControls(activeListId, pageIndex, totalPages);
+            updateMoveAllControl();
+            renderListTabs();
+        } catch (err) {
+            console.warn("Render page failed", err);
+        } finally {
+            if (scrollState && scrollRoot) {
+                requestAnimationFrame(() => {
+                    resultsEl.style.minHeight = "";
+                    scrollRoot.scrollTop = scrollState.top;
+                    scrollRoot.scrollLeft = scrollState.left;
+                });
+            }
+        }
+    }
+
+    function changePageBy(delta) {
+        const activeListId = listConfig.active || MAIN_LIST_ID;
+        const currentIndex = ensurePageIndex(activeListId);
+        const totalPages = getTotalPagesForList(activeListId);
+        const clampedCurrent = Math.min(Math.max(currentIndex, 0), totalPages - 1);
+        if (clampedCurrent !== currentIndex) {
+            clampPageIndex(activeListId, clampedCurrent);
+            renderActivePage({ reason: "pagination", preserveScroll: true });
             return;
         }
-        const cardMap = new Map(cards.map(card => [card.dataset.taskId, card]));
-        const fragment = document.createDocumentFragment();
-        const newOrder = [];
-        cardOrder.forEach(id => {
-            const card = cardMap.get(id);
-            if (!card) return;
-            fragment.appendChild(card);
-            newOrder.push(id);
-            cardMap.delete(id);
-        });
-        if (cardMap.size) {
-            const leftovers = Array.from(cardMap.values()).sort((a, b) => getCardTimestampValue(b) - getCardTimestampValue(a));
-            leftovers.forEach(card => {
-                fragment.appendChild(card);
-                if (card.dataset.taskId) newOrder.push(card.dataset.taskId);
-            });
-        }
-        insertBeforeListMoveCard(fragment);
-        const changed = cardOrder.length !== newOrder.length || cardOrder.some((id, idx) => id !== newOrder[idx]);
-        cardOrder = newOrder;
-        if (changed) markCardOrderDirty();
+        if ((delta < 0 && currentIndex <= 0) || (delta > 0 && currentIndex >= totalPages - 1)) return;
+        const nextIndex = currentIndex + delta;
+        const { pageIndex } = clampPageIndex(activeListId, nextIndex);
+        if (pageIndex === currentIndex) return;
+        renderActivePage({ reason: "pagination", preserveScroll: true });
     }
 
     function prioritizeActiveTaskCards() {
@@ -2026,7 +2329,7 @@
         if (!isCardSortDragEvent(e)) return;
         e.preventDefault();
         const targetCard = e.target.closest(".result-card");
-        if (!targetCard || targetCard.dataset.listId !== listConfig.active || targetCard.dataset.taskId === draggingCardId) {
+        if (!targetCard || !targetCard.dataset.taskId || targetCard.dataset.placeholder === "true" || targetCard.dataset.listId !== listConfig.active || targetCard.dataset.taskId === draggingCardId) {
             clearCardSortHints();
             return;
         }
@@ -2067,6 +2370,9 @@
         e.preventDefault();
         const dragged = draggingCardId ? document.querySelector(`.result-card[data-task-id="${draggingCardId}"]`) : null;
         let targetCard = e.target.closest(".result-card");
+        if (targetCard && (!targetCard.dataset.taskId || targetCard.dataset.placeholder === "true")) {
+            targetCard = null;
+        }
         if (!dragged) {
             clearCardSortHints();
             clearCardDragOrigin();
@@ -2108,32 +2414,19 @@
     const resultsEl = document.getElementById("results");
     const resultsCountLabel = document.getElementById("resultsCountLabel");
     const resultsDropHint = document.getElementById("resultsDropHint");
-    const listMoveAllCardEl = document.getElementById("listMoveAllCard");
+    const listMoveOverlayEl = document.getElementById("listMoveOverlay");
     const listMoveAllSelectEl = document.getElementById("listMoveAllSelect");
     const listMoveAllBtn = document.getElementById("listMoveAllBtn");
     const listMoveAllHintEl = document.getElementById("listMoveAllHint");
-    const loadMoreWrapper = document.getElementById("resultsLoadMore");
-    const loadMoreBtn = document.getElementById("loadMoreBtn");
-    const loadMoreHint = document.getElementById("loadMoreHint");
-    const resultsScrollContainer = document.querySelector(".results-scroll");
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener("click", () => loadNextResultsPage());
-    }
-    if (resultsScrollContainer) {
-        resultsScrollContainer.addEventListener("scroll", () => {
-            if (restoreLoading || restoreExhausted) return;
-            const threshold = 200;
-            const distanceFromBottom = resultsScrollContainer.scrollHeight - (resultsScrollContainer.scrollTop + resultsScrollContainer.clientHeight);
-            if (distanceFromBottom < threshold) {
-                loadNextResultsPage();
-            }
-        });
-    }
-    updateLoadMoreUi();
+    const listMoveCancelBtn = document.getElementById("listMoveCancelBtn");
+    const pagePrevBtn = document.getElementById("pagePrevBtn");
+    const pageNextBtn = document.getElementById("pageNextBtn");
+    const pageIndicator = document.getElementById("pageIndicator");
+    if (pagePrevBtn) pagePrevBtn.addEventListener("click", () => changePageBy(-1));
+    if (pageNextBtn) pageNextBtn.addEventListener("click", () => changePageBy(1));
 
     function getListMoveCardAnchor() {
-        if (!resultsEl || !listMoveAllCardEl) return null;
-        return listMoveAllCardEl.parentNode === resultsEl ? listMoveAllCardEl : null;
+        return null;
     }
 
     function insertBeforeListMoveCard(node) {
@@ -2386,8 +2679,8 @@
                 setFolderStatus("Read/write access granted", "ok");
                 hideFolderOverlay();
                 await loadCardOrderFromDisk(true);
-                applyStoredCardOrder();
-                filterResultsView();
+                await rebuildTaskIndexFromDb();
+                await renderActivePage({ reason: "folder-auth" });
                 persistCardOrderToDisk();
                 queueDiskSync();
             } else {
@@ -2482,7 +2775,7 @@
     }
 
     function getListCardCount(listId) {
-        return resultsEl.querySelectorAll(`.result-card[data-list-id="${listId}"]`).length;
+        return getOrderedTaskIdsForList(listId).length;
     }
 
     // --- New function: handle list reordering ---
@@ -2683,19 +2976,7 @@
     }
 
     function filterResultsView() {
-        const cards = resultsEl.querySelectorAll(".result-card");
-        cards.forEach(card => {
-            const listId = card.dataset.listId || MAIN_LIST_ID;
-            const shouldShow = listId === listConfig.active;
-            card.style.display = shouldShow ? "" : "none";
-            if (shouldShow) {
-                restoreCardMedia(card).catch(err => console.warn("Restore media failed", err));
-            } else {
-                offloadCardMedia(card);
-            }
-        });
-        updateResultsCount();
-        renderListTabs();
+        renderActivePage({ reason: "filter" });
     }
 
     function findCardImage(card) {
@@ -2843,7 +3124,7 @@
     }
 
     function updateMoveAllControl() {
-        if (!listMoveAllCardEl || !listMoveAllSelectEl || !listMoveAllHintEl) return;
+        if (!listMoveAllSelectEl || !listMoveAllHintEl) return;
         const currentValue = listMoveAllSelectEl.value;
         const availableTargets = Array.from(listConfig.lists.values()).filter(list => {
             if (list.id === listConfig.active) return false;
@@ -2875,67 +3156,100 @@
             listMoveAllBtn.disabled = availableTargets.length === 0 || activeCount === 0;
         }
         listMoveAllHintEl.textContent = activeCount ? `${activeName} · ${activeCount} tasks` : `${activeName} list has no tasks`;
-        listMoveAllCardEl.style.display = "flex";
     }
 
-    async function assignCardToList(taskId, targetListId) {
-        const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
-        if (!card) return;
+    function openListMoveOverlay() {
+        if (!listMoveOverlayEl) return;
+        updateMoveAllControl();
+        listMoveOverlayEl.classList.remove("hidden");
+        listMoveOverlayEl.setAttribute("aria-hidden", "false");
+        setTimeout(() => listMoveAllSelectEl?.focus(), 0);
+    }
+
+    function closeListMoveOverlay() {
+        if (!listMoveOverlayEl) return;
+        listMoveOverlayEl.classList.add("hidden");
+        listMoveOverlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    function toggleListMoveOverlay() {
+        if (!listMoveOverlayEl) return;
+        if (listMoveOverlayEl.classList.contains("hidden")) openListMoveOverlay();
+        else closeListMoveOverlay();
+    }
+
+    async function updateTaskListId(taskId, targetListId) {
+        if (!taskId) return;
         const listId = listConfig.lists.has(targetListId) ? targetListId : MAIN_LIST_ID;
-        card.dataset.listId = listId;
+        const meta = taskIndex.get(taskId);
+        if (meta) {
+            meta.listId = listId;
+            taskIndex.set(taskId, meta);
+        } else {
+            upsertTaskIndexEntry(taskId, { listId, type: TASK_TYPES.RESULT });
+        }
         const record = resultsData.get(taskId);
         if (record) {
             record.listId = listId;
-            await updateStoredResult(taskId, { listId });
-            await persistResultMetadataSnapshot(taskId, record);
         }
-        filterResultsView();
+        const runtime = getTaskRuntimeInfo(taskId);
+        if (runtime) {
+            runtime.listId = listId;
+            taskRuntimeInfo.set(taskId, runtime);
+        }
+        const pending = pendingTaskRecords.get(taskId);
+        if (pending) {
+            pending.listId = listId;
+            pendingTaskRecords.set(taskId, pending);
+            persistPendingTaskRecords();
+        }
+        await updateStoredResult(taskId, { listId });
+        if (folderAccessGranted) {
+            const stored = record || await fetchStoredResultRecord(taskId);
+            if (stored) {
+                stored.listId = listId;
+                await persistResultMetadataSnapshot(taskId, stored);
+            }
+        }
+    }
+
+    async function assignCardToList(taskId, targetListId) {
+        if (!taskId) return;
+        await updateTaskListId(taskId, targetListId);
+        renderActivePage({ reason: "list-assign" });
     }
 
     async function moveActiveListTasks(targetListId) {
-        if (!resultsEl || !listConfig.lists.has(targetListId)) {
+        if (!listConfig.lists.has(targetListId)) {
             setTemporaryErrorStatus("The target list is invalid");
-            return;
+            return false;
         }
         const sourceListId = listConfig.active;
         if (sourceListId === targetListId) {
             setTemporaryErrorStatus("Please choose a different target list");
-            return;
+            return false;
         }
-        const cards = Array.from(resultsEl.querySelectorAll(`.result-card[data-list-id="${sourceListId}"]`));
-        if (!cards.length) {
+        const ids = getOrderedTaskIdsForList(sourceListId);
+        if (!ids.length) {
             setTemporaryErrorStatus("There are no tasks in the current list");
-            return;
+            return false;
         }
-        const updateJobs = [];
-        cards.forEach(card => {
-            card.dataset.listId = targetListId;
-            const taskId = card.dataset.taskId;
-            if (taskId && resultsData.has(taskId)) {
-                const record = resultsData.get(taskId);
-                record.listId = targetListId;
-                updateJobs.push(updateStoredResult(taskId, { listId: targetListId }));
-                updateJobs.push(persistResultMetadataSnapshot(taskId, record));
-            }
-        });
-        if (updateJobs.length) {
-            try {
-                await Promise.all(updateJobs);
-            } catch (err) {
-                console.warn("Failed to update while moving lists in bulk", err);
-            }
+        for (const taskId of ids) {
+            await updateTaskListId(taskId, targetListId);
         }
-        filterResultsView();
+        renderActivePage({ reason: "move-all" });
+        return true;
     }
 
-    function handleMoveAllBtnClick() {
+    async function handleMoveAllBtnClick() {
         if (!listMoveAllSelectEl) return;
         const targetListId = listMoveAllSelectEl.value;
         if (!targetListId) {
             setTemporaryErrorStatus("Please select a target list");
             return;
         }
-        moveActiveListTasks(targetListId);
+        const moved = await moveActiveListTasks(targetListId);
+        if (moved) closeListMoveOverlay();
     }
 
     function addCustomList() {
@@ -2953,56 +3267,27 @@
         const confirmed = confirm(`Delete the list "${list.name}"?`);
         if (!confirmed) return;
         listConfig.lists.delete(listId);
-        const affectedCards = Array.from(resultsEl.querySelectorAll(`.result-card[data-list-id="${listId}"]`));
+        const affectedIds = getOrderedTaskIdsForList(listId);
         let deleteAll = false;
-        if (affectedCards.length) {
-            deleteAll = confirm(`How should the ${affectedCards.length} tasks be handled after deleting the list?\nOK = Delete all tasks\nCancel = Move them to the Main List`);
+        if (affectedIds.length) {
+            deleteAll = confirm(`How should the ${affectedIds.length} tasks be handled after deleting the list?\nOK = Delete all tasks\nCancel = Move them to the Main List`);
         }
         if (deleteAll) {
-            const ids = [];
-            const fileTargets = [];
-            affectedCards.forEach(card => {
-                const taskId = card.dataset.taskId;
-                if (!taskId) return;
-                ids.push(taskId);
-                const record = resultsData.get(taskId);
-                if (record) {
-                    fileTargets.push({ taskId, meta: record.meta });
-                }
-                cleanupResultRecord(taskId, card);
-                card.remove();
+            for (const taskId of affectedIds) {
+                await purgeResultRecord(taskId);
+                removeTaskFromOrder(taskId);
+                removeTaskIndexEntry(taskId);
                 removePendingTask(taskId);
-            });
-            captureOrderFromDom();
-            filterResultsView();
-            try {
-                const db = await openDB();
-                const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
-                const metaStore = tx.objectStore(STORE_RESULTS);
-                const payloadStore = tx.objectStore(STORE_PAYLOADS);
-                ids.forEach(id => {
-                    metaStore.delete(id);
-                    payloadStore.delete(id);
-                });
-            } catch (err) {
-                console.warn("Failed to delete list records", err);
             }
-            await Promise.all(fileTargets.map(({ taskId, meta }) => deleteResultFiles(taskId, meta)));
         } else {
-            affectedCards.forEach(card => {
-                card.dataset.listId = MAIN_LIST_ID;
-                const taskId = card.dataset.taskId;
-                if (taskId && resultsData.has(taskId)) {
-                    const record = resultsData.get(taskId);
-                    record.listId = MAIN_LIST_ID;
-                    updateStoredResult(taskId, { listId: MAIN_LIST_ID });
-                    persistResultMetadataSnapshot(taskId, record);
-                }
-            });
+            for (const taskId of affectedIds) {
+                await updateTaskListId(taskId, MAIN_LIST_ID);
+            }
         }
         if (listConfig.active === listId) listConfig.active = MAIN_LIST_ID;
+        pageState.pageByListId.delete(listId);
         saveListPreferences();
-        filterResultsView();
+        renderActivePage({ reason: "remove-list" });
     }
 
     // Attach auto-save to inputs
@@ -3038,6 +3323,14 @@
     }
     if (listMoveAllBtn) {
         listMoveAllBtn.addEventListener("click", handleMoveAllBtnClick);
+    }
+    if (listMoveCancelBtn) {
+        listMoveCancelBtn.addEventListener("click", () => closeListMoveOverlay());
+    }
+    if (listMoveOverlayEl) {
+        listMoveOverlayEl.addEventListener("click", (e) => {
+            if (e.target === listMoveOverlayEl) closeListMoveOverlay();
+        });
     }
 
     const dropZone = document.getElementById("dropZone");
@@ -3075,36 +3368,90 @@
         syncResultsFromDirectory();
     }
 
-    function updateLoadMoreUi() {
-        if (!loadMoreWrapper || !loadMoreBtn) return;
-        
-        if (restoreLoading) {
-            loadMoreWrapper.classList.remove("hidden");
-            loadMoreBtn.disabled = true;
-            loadMoreBtn.textContent = "LOADING…";
-            if (loadMoreHint) loadMoreHint.textContent = "Loading saved results…";
-            return;
+    function reconcileGlobalOrderWithRecords(records = [], extraIds = []) {
+        const dbIds = new Set(records.map(record => record.taskId).filter(Boolean));
+        const keepIds = new Set([...dbIds, ...extraIds]);
+        const filtered = cardOrder.filter(id => keepIds.has(id));
+        const present = new Set(filtered);
+        const missing = records
+            .filter(record => record?.taskId && !present.has(record.taskId))
+            .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        missing.forEach(record => {
+            filtered.push(record.taskId);
+            present.add(record.taskId);
+        });
+        extraIds.forEach(id => {
+            if (!present.has(id)) {
+                filtered.unshift(id);
+                present.add(id);
+            }
+        });
+        const changed = filtered.length !== cardOrder.length || filtered.some((id, idx) => id !== cardOrder[idx]);
+        if (changed) {
+            cardOrder = filtered;
+            markCardOrderDirty();
         }
+    }
 
-        if (restoredResultCount === 0) {
-            loadMoreWrapper.classList.add("hidden");
-            return;
+    async function fetchAllResultIndex() {
+        const db = await openDB();
+        const tx = db.transaction(STORE_RESULTS, "readonly");
+        const store = tx.objectStore(STORE_RESULTS);
+        const hasIndex = store.indexNames && store.indexNames.contains(RESULT_TIMESTAMP_INDEX);
+        const source = hasIndex ? store.index(RESULT_TIMESTAMP_INDEX) : store;
+        return await new Promise((resolve, reject) => {
+            const items = [];
+            const request = source.openCursor(null, "next");
+            request.onerror = () => reject(request.error);
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (!cursor) return resolve(items);
+                const value = cursor.value;
+                if (value?.taskId) {
+                    items.push({
+                        taskId: value.taskId,
+                        listId: value.listId || MAIN_LIST_ID,
+                        timestamp: value.timestamp || 0
+                    });
+                }
+                cursor.continue();
+            };
+        });
+    }
+
+    async function rebuildTaskIndexFromDb() {
+        const records = await fetchAllResultIndex();
+        const nonResultEntries = Array.from(taskIndex.entries())
+            .filter(([, meta]) => meta?.type && meta.type !== TASK_TYPES.RESULT);
+        taskIndex.clear();
+        const foundListIds = new Set();
+        records.forEach(record => {
+            if (!record?.taskId) return;
+            upsertTaskIndexEntry(record.taskId, {
+                listId: record.listId || MAIN_LIST_ID,
+                timestamp: record.timestamp || Date.now(),
+                type: TASK_TYPES.RESULT
+            });
+            if (record.listId) foundListIds.add(record.listId);
+        });
+        const extraIds = [];
+        nonResultEntries.forEach(([taskId, meta]) => {
+            if (!taskId || !meta) return;
+            taskIndex.set(taskId, meta);
+            extraIds.push(taskId);
+        });
+        let configChanged = false;
+        foundListIds.forEach(id => {
+            if (!id || listConfig.lists.has(id)) return;
+            const newName = id.startsWith("list_") ? `Recovered List ${id.slice(-4)}` : `List ${id}`;
+            listConfig.lists.set(id, { id, name: newName, locked: false });
+            configChanged = true;
+        });
+        if (configChanged) {
+            saveListPreferences();
         }
-
-        loadMoreWrapper.classList.remove("hidden");
-
-        if (restoreExhausted) {
-            loadMoreWrapper.classList.add("hidden"); 
-            return;
-        }
-
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = restoredResultCount ? "LOAD MORE RESULTS" : "LOAD HISTORY";
-        if (loadMoreHint) {
-            loadMoreHint.textContent = restoredResultCount
-                ? `Loaded ${restoredResultCount} task${restoredResultCount === 1 ? "" : "s"}`
-                : "History loads in batches to protect memory";
-        }
+        ensureRefListRegistered();
+        reconcileGlobalOrderWithRecords(records, extraIds);
     }
 
     async function hydrateMissingThumbnail(recordMeta) {
@@ -3125,99 +3472,6 @@
         }
     }
 
-    async function fetchResultMetadataBatch(limit = RESULT_PAGE_SIZE) {
-        const db = await openDB();
-        const tx = db.transaction(STORE_RESULTS, "readonly");
-        const store = tx.objectStore(STORE_RESULTS);
-        const hasIndex = store.indexNames && store.indexNames.contains(RESULT_TIMESTAMP_INDEX);
-        if (restoreCursorUsingIndex === null) {
-            restoreCursorUsingIndex = !!hasIndex;
-        } else if (!!hasIndex !== restoreCursorUsingIndex) {
-            restoreCursorKey = null;
-            restoreCursorUsingIndex = !!hasIndex;
-        }
-        const source = hasIndex ? store.index(RESULT_TIMESTAMP_INDEX) : store;
-        const direction = "prev";
-        const range = restoreCursorKey !== null ? IDBKeyRange.upperBound(restoreCursorKey, true) : null;
-        return await new Promise((resolve, reject) => {
-            const items = [];
-            const request = source.openCursor(range, direction);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = (event) => {
-                const cursor = event.target.result;
-                if (!cursor) {
-                    restoreExhausted = true;
-                    return resolve(items);
-                }
-                const value = cursor.value;
-                if (value?.taskId) {
-                    items.push({
-                        taskId: value.taskId,
-                        meta: value.meta || {},
-                        prompt: value.prompt || "",
-                        timestamp: value.timestamp || 0,
-                        listId: value.listId || MAIN_LIST_ID,
-                        thumbnail: value.thumbnail || null,
-                        refImageIds: Array.isArray(value.refImageIds) ? value.refImageIds : []
-                    });
-                    restoreCursorKey = cursor.key;
-                }
-                if (items.length >= limit) {
-                    return resolve(items);
-                }
-                cursor.continue();
-            };
-        });
-    }
-
-    async function loadNextResultsPage(options = {}) {
-        const { reset = false } = options;
-        if (restoreLoading) return;
-        if (reset) {
-            restoreCursorKey = null;
-            restoreExhausted = false;
-            restoredResultCount = 0;
-            restoreCursorUsingIndex = null;
-        } else if (restoreExhausted) {
-            updateLoadMoreUi();
-            return;
-        }
-        restoreLoading = true;
-        updateLoadMoreUi();
-        try {
-            const batch = await fetchResultMetadataBatch(RESULT_PAGE_SIZE);
-            if (!batch.length) return;
-            for (const record of batch) {
-                if (!record.thumbnail && record.meta?.mimeType) {
-                    await hydrateMissingThumbnail(record);
-                }
-                try {
-                    await renderImageCard(record.taskId, null, record.meta, record.prompt, {
-                        isRestoring: true,
-                        timestamp: record.timestamp,
-                        listId: record.listId,
-                        thumbnail: record.thumbnail,
-                        persistToDb: false,
-                        skipDiskSave: true,
-                        refImageIds: record.refImageIds || []
-                    });
-                    restoredResultCount++;
-                } catch (renderErr) {
-                    console.warn("Failed to render stored task", renderErr);
-                }
-            }
-            applyStoredCardOrder();
-            filterResultsView();
-            updateResultsCount();
-        } catch (err) {
-            console.error("Failed to load stored results", err);
-            setTemporaryErrorStatus("Failed to load stored results.");
-        } finally {
-            restoreLoading = false;
-            updateLoadMoreUi();
-        }
-    }
-
     /* --- Initialization Logic --- */
     async function initApp() {
         await ensurePersistentStorage();
@@ -3229,7 +3483,8 @@
             folderAccessGranted = false;
             showFolderOverlay("Please choose an output directory");
             await loadStoredRefSelections(db);
-            await loadNextResultsPage({ reset: true });
+            await rebuildTaskIndexFromDb();
+            await renderActivePage({ reason: "init" });
             dbHydrated = true;
             attemptDiskSync();
         } catch(e) {
@@ -3271,11 +3526,11 @@
     }
     
     function updateResultsCount() {
-      const total = resultsEl.querySelectorAll(".result-card:not(.skeleton)").length;
-      const mainCount = resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${MAIN_LIST_ID}"]`).length;
-      const activeCount = resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${listConfig.active}"]`).length;
-      const activeName = listConfig.lists.get(listConfig.active)?.name || "Current";
       updateMoveAllControl();
+      renderListTabs();
+      const activeListId = listConfig.active || MAIN_LIST_ID;
+      const { pageIndex, totalPages } = clampPageIndex(activeListId, ensurePageIndex(activeListId));
+      updatePaginationControls(activeListId, pageIndex, totalPages);
     }
 
     /* --- Lightbox Logic (Same as before) --- */
@@ -3393,16 +3648,20 @@
         lightbox.setAttribute("aria-hidden", "false");
     }
 
-    function triggerLastViewedLocator() {
+    async function triggerLastViewedLocator() {
         if (!lastViewedTaskId) return;
-
-        const card = document.querySelector(`.result-card[data-task-id="${lastViewedTaskId}"]`);
-        if (!card) {
-            setTemporaryErrorStatus("Last viewed card not in current view");
+        const activeListId = listConfig.active || MAIN_LIST_ID;
+        const orderedIds = getOrderedTaskIdsForList(activeListId);
+        const index = orderedIds.indexOf(lastViewedTaskId);
+        if (index === -1) {
+            setTemporaryErrorStatus("Last viewed card not in current list");
             return;
         }
-
-        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        const targetPage = Math.floor(index / pageState.pageSize);
+        setPageIndex(activeListId, targetPage);
+        await renderActivePage({ reason: "locator" });
+        const card = document.querySelector(`.result-card[data-task-id="${lastViewedTaskId}"]`);
+        if (!card) return;
 
         document.querySelectorAll('.locator-highlight').forEach(el => {
             el.classList.remove('locator-highlight');
@@ -3446,19 +3705,17 @@
         }, 200);
     }
     function navigateLightbox(direction) {
-        const wrappers = Array.from(document.querySelectorAll(`#results .result-card:not(.skeleton)[data-list-id="${listConfig.active}"] .thumb-wrap`));
-        if (!wrappers.length) return;
+        const orderedIds = getOrderedTaskIdsForList(listConfig.active);
+        if (!orderedIds.length) return;
         const currentId = lightboxImage.dataset.taskId;
-        const currentIndex = wrappers.findIndex(wrap => wrap.dataset.taskId === currentId);
+        const currentIndex = orderedIds.indexOf(currentId);
         if (currentIndex === -1) return;
         let newIndex = currentIndex + direction;
         if (newIndex < 0) newIndex = 0;
-        if (newIndex >= wrappers.length) newIndex = wrappers.length - 1;
+        if (newIndex >= orderedIds.length) newIndex = orderedIds.length - 1;
         if (newIndex !== currentIndex) {
-            const target = wrappers[newIndex];
-            if (target?.dataset.taskId) {
-                openLightboxByTaskId(target.dataset.taskId);
-            }
+            const nextId = orderedIds[newIndex];
+            if (nextId) openLightboxByTaskId(nextId);
         }
     }
     lightboxImage.addEventListener("mousedown", (e) => {
@@ -3576,7 +3833,20 @@
         }
 
         document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" || e.key.toLowerCase() === "e") {
+        const keyLower = e.key?.toLowerCase();
+        if (e.key === "Escape") {
+            if (listMoveOverlayEl && !listMoveOverlayEl.classList.contains("hidden")) {
+                e.preventDefault();
+                closeListMoveOverlay();
+                return;
+            }
+            if (importOverlayEl && !importOverlayEl.classList.contains("hidden") && importDialogResolver) {
+                cancelImportDialog();
+                return;
+            }
+            closeLightbox();
+        }
+        if (keyLower === "e") {
             if (importOverlayEl && !importOverlayEl.classList.contains("hidden") && importDialogResolver) {
                 cancelImportDialog();
             } else {
@@ -3605,7 +3875,6 @@
         const targetTag = (document.activeElement?.tagName || "").toLowerCase();
         const isEditableTarget = document.activeElement?.isContentEditable || ["input", "textarea", "select"].includes(targetTag);
         if (!isEditableTarget) {
-            const keyLower = e.key?.toLowerCase();
             if (keyLower === "q" && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 e.preventDefault();
                 triggerLastViewedLocator();
@@ -3613,6 +3882,24 @@
             if (keyLower === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 e.preventDefault();
                 setActiveList(REF_LIST_ID);
+            }
+            if (keyLower === "m" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+                if (!lightbox.classList.contains("visible") && importOverlayEl?.classList.contains("hidden")) {
+                    e.preventDefault();
+                    toggleListMoveOverlay();
+                }
+            }
+            if (!lightbox.classList.contains("visible")
+                && importOverlayEl?.classList.contains("hidden")
+                && listMoveOverlayEl?.classList.contains("hidden")) {
+                if (e.key === "ArrowLeft"||e.key.toLowerCase() === "a") {
+                    e.preventDefault();
+                    changePageBy(-1);
+                }
+                if (e.key === "ArrowRight"||e.key.toLowerCase() === "d") {
+                    e.preventDefault();
+                    changePageBy(1);
+                }
             }
         }
         });
@@ -3642,8 +3929,9 @@
         return entry.sourceId.startsWith("ref-");
     }
 
-    async function cleanupRefEntryArtifacts(entries = []) {
+    async function cleanupRefEntryArtifacts(entries = [], options = {}) {
         if (!Array.isArray(entries) || !entries.length) return;
+        if (!options.purgeAssets) return;
         const ownedEntries = entries.filter(isAppOwnedRefEntry);
         if (!ownedEntries.length) return;
         const purgeIds = [];
@@ -3655,17 +3943,12 @@
                 console.warn("Failed to cleanup ref entry", entry?.sourceId, err);
             }
         }));
-        let removedDom = false;
         purgeIds.forEach((taskId) => {
-            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
-            if (card) {
-                card.remove();
-                removedDom = true;
-            }
+            removeTaskFromOrder(taskId);
+            removeTaskIndexEntry(taskId);
         });
-        if (removedDom) {
-            captureOrderFromDom();
-            filterResultsView();
+        if (purgeIds.length) {
+            renderActivePage({ reason: "ref-cleanup" });
         }
     }
 
@@ -3724,11 +4007,9 @@
         return entry.thumbnail;
     }
 
-    async function createRefAssetFromBase64(base64Data, mimeType, label, metaExtras = {}) {
-        if (!base64Data) return null;
-        const taskId = `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    function buildRefMeta(mimeType, label, metaExtras = {}) {
         const safeMime = mimeType || DEFAULT_IMAGE_MIME;
-        const meta = {
+        return {
             resolution: metaExtras.resolution || "",
             aspectRatio: metaExtras.aspectRatio || "",
             mimeType: safeMime,
@@ -3736,14 +4017,22 @@
             source: metaExtras.source || "ref",
             originalName: metaExtras.originalName || label || ""
         };
+    }
+
+    async function createRefAssetFromBase64(base64Data, mimeType, label, metaExtras = {}) {
+        if (!base64Data) return null;
+        const taskId = `ref-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const safeMime = mimeType || DEFAULT_IMAGE_MIME;
+        const meta = buildRefMeta(safeMime, label, metaExtras);
         const timestamp = Date.now();
-        const shouldSkipSave = metaExtras.skipDiskSave !== undefined ? metaExtras.skipDiskSave : !folderAccessGranted;
+        const thumbOverride = metaExtras.thumbnail || null;
         await renderImageCard(taskId, base64Data, meta, label || "", {
             listId: REF_LIST_ID,
             timestamp,
             skipDiskSave: shouldSkipSave,
             refImageIds: [],
-            persistToDb: true
+            persistToDb: true,
+            thumbnail: thumbOverride
         });
         return taskId;
     }
@@ -3986,14 +4275,32 @@
             setTemporaryErrorStatus(`LIMIT REACHED (${REF_IMAGE_LIMIT}).`);
             return;
         }
-        const taskId = await createRefAssetFromBase64(base64Data, mimeType, fileName, {
+        let thumbData = null;
+        try {
+            thumbData = await generateThumbnail(base64Data, mimeType);
+        } catch (err) {
+            console.warn("Reference thumbnail generation failed", err);
+        }
+        const refMeta = buildRefMeta(mimeType || DEFAULT_IMAGE_MIME, fileName || "Reference", {
             ...metaExtras,
             source: metaExtras.source || "ref-import",
             originalName: metaExtras.originalName || fileName || "",
             skipDiskSave: false
         });
+        const taskId = await createRefAssetFromBase64(base64Data, mimeType, fileName, {
+            ...metaExtras,
+            source: metaExtras.source || "ref-import",
+            originalName: metaExtras.originalName || fileName || "",
+            thumbnail: thumbData
+        });
         if (taskId) {
-            await addRefSelectionForTask(taskId, { label: fileName || "Reference", sourceListId: REF_LIST_ID, mimeType });
+            await addRefSelectionForTask(taskId, {
+                label: fileName || "Reference",
+                sourceListId: REF_LIST_ID,
+                mimeType,
+                thumbnail: thumbData,
+                meta: refMeta
+            });
         }
     }
 
@@ -4090,48 +4397,48 @@
         if (task && task.controller) {
             task.controller.abort(); 
             activeTasks.delete(taskId);
-            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
-            if (card) renderCancelledCard(card, taskId);
-            else removePendingTask(taskId);
+            renderCancelledCard(null, taskId);
             updateGlobalStatus();
         }
     }
     cancelAllBtn.addEventListener("click", () => {
         if(activeTasks.size === 0) return;
         const mainTasks = Array.from(activeTasks.keys()).filter(taskId => {
-            const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
-            return !card || card.dataset.listId === MAIN_LIST_ID;
+            const meta = taskIndex.get(taskId);
+            return !meta || meta.listId === MAIN_LIST_ID;
         });
         mainTasks.forEach(taskId => { cancelTask(taskId); });
         updateGlobalStatus();
     });
 
-    function createSkeletonCard(taskId) {
+    function buildSkeletonCardElement(taskId) {
+      const meta = taskIndex.get(taskId);
+      const runtime = getTaskRuntimeInfo(taskId) || {};
       const card = document.createElement("div");
       card.className = "result-card skeleton";
       card.dataset.taskId = taskId;
-      card.dataset.listId = MAIN_LIST_ID;
-      card.dataset.createdAt = String(Date.now());
-      card.style.display = listConfig.active === MAIN_LIST_ID ? "" : "none";
+      card.dataset.listId = meta?.listId || MAIN_LIST_ID;
+      card.dataset.createdAt = String(meta?.timestamp || Date.now());
       const title = document.createElement("div");
       title.className = "result-title";
       const left = document.createElement("span");
       left.textContent = `TASK_${taskId.split('_')[1]}`; 
       const badge = document.createElement("span");
       badge.className = "badge";
-      badge.textContent = "QUEUED";
+      badge.textContent = runtime.badgeText || "QUEUED";
+      if (runtime.isRetry) badge.classList.add("retry");
       title.appendChild(left);
       title.appendChild(badge);
       const thumb = document.createElement("div");
       thumb.className = "skeleton-thumb";
       const line = document.createElement("div");
       line.className = "skeleton-line";
-      const meta = document.createElement("div");
-      meta.className = "result-meta";
+      const metaRow = document.createElement("div");
+      metaRow.className = "result-meta";
       const hint = document.createElement("span");
       hint.className = "status-text";
-      hint.textContent = "INITIALIZING...";
-      meta.appendChild(hint);
+      hint.textContent = runtime.statusText || "INITIALIZING...";
+      metaRow.appendChild(hint);
       const footer = document.createElement("div");
       footer.className = "skeleton-footer";
       const cancelBtn = document.createElement("button");
@@ -4142,15 +4449,31 @@
       card.appendChild(title);
       card.appendChild(thumb);
       card.appendChild(line);
-      card.appendChild(meta);
+      card.appendChild(metaRow);
       card.appendChild(footer);
-      insertAtResultsTop(card); // New tasks go to top
-      captureOrderFromDom();
-      updateResultsCount();
       return card;
     }
 
+    function createSkeletonCard(taskId, options = {}) {
+      const listId = options.listId || MAIN_LIST_ID;
+      const timestamp = options.timestamp || Date.now();
+      upsertTaskIndexEntry(taskId, {
+        listId,
+        timestamp,
+        type: TASK_TYPES.SKELETON
+      });
+      setTaskRuntimeInfo(taskId, {
+        statusText: "INITIALIZING...",
+        badgeText: "QUEUED",
+        isRetry: false
+      });
+      ensureTaskInOrder(taskId, "start");
+      renderActivePage({ reason: "skeleton-create" });
+      return taskId;
+    }
+
     function updateSkeletonStatus(taskId, statusText, badgeText, isRetry = false) {
+        setTaskRuntimeInfo(taskId, { statusText, badgeText, isRetry });
         const card = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
         if (!card) return;
         const badge = card.querySelector(".badge");
@@ -4341,20 +4664,11 @@
       clearBtn.textContent = "DISCARD";
       clearBtn.addEventListener("click", async (e) => {
         if (!confirmAction(e, "Discard this result permanently?")) return;
-        const record = resultsData.get(taskId);
-        cleanupResultRecord(taskId, card);
-        card.remove();
-        captureOrderFromDom();
-        filterResultsView();
-        try {
-            const db = await openDB();
-            const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
-            tx.objectStore(STORE_RESULTS).delete(taskId);
-            tx.objectStore(STORE_PAYLOADS).delete(taskId);
-        } catch(e) {}
-        if (record) {
-            await deleteResultFiles(taskId, record.meta);
-        }
+        await purgeResultRecord(taskId);
+        removeTaskFromOrder(taskId);
+        removeTaskIndexEntry(taskId);
+        removePendingTask(taskId);
+        renderActivePage({ reason: "discard-result" });
       });
 
       actions.appendChild(reuseBtn);
@@ -4431,30 +4745,21 @@
         refImageIds
         });
 
-      const card = buildResultCardElement({
-        taskId,
+      upsertTaskIndexEntry(taskId, {
         listId,
         timestamp,
-        meta: safeMeta,
-        prompt: usedPrompt,
-        thumbnail: thumbData,
-        base64
+        type: TASK_TYPES.RESULT
       });
-
-      const skeleton = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
-      if (skeleton) {
-          skeleton.replaceWith(card);
-      } else {
-          insertAtResultsTop(card);
-          if (!isRestoring) captureOrderFromDom();
+      taskRuntimeInfo.delete(taskId);
+      if (!isRestoring) {
+          ensureTaskInOrder(taskId, "start");
       }
       if (isRestoring) {
           syncCardUnseenClass(taskId);
       } else {
           markResultUnseen(taskId);
       }
-      filterResultsView();
-      observeCardMedia(card);
+      renderActivePage({ reason: "result-render" });
 
       if (!skipDiskSave) {
         saveResultToDisk(taskId, base64, mimeType, { 
@@ -4475,8 +4780,7 @@
                 persistResultMetadataSnapshot(taskId);
             }, 500 + Math.random() * 1000); 
         }
-        setTimeout(pruneDomNodes, 100);
-        return card;
+        return taskId;
     }
 
     function generateThumbnail(base64, mimeType = "image/png") {
@@ -4577,12 +4881,19 @@
 
     function cleanupResultRecord(taskId, cardHint = null, options = {}) {
         if (!taskId) return;
-        if (typeof cancelledSaveIds !== "undefined") cancelledSaveIds.add(taskId);
-        markResultSeen(taskId);
+        const {
+            keepObserver = false,
+            keepRecord = false,
+            preserveUnseen = false,
+            skipSaveCancel = false,
+            skipRecordUrlCleanup = false
+        } = options || {};
+        if (!skipSaveCancel && typeof cancelledSaveIds !== "undefined") cancelledSaveIds.add(taskId);
+        if (!preserveUnseen) markResultSeen(taskId);
         const record = resultsData.get(taskId);
         const card = cardHint || document.querySelector(`.result-card[data-task-id="${taskId}"]`);
         if (card) {
-            if (!options.keepObserver) {
+            if (!keepObserver) {
                 unobserveCardMedia(card);
             }
             offloadCardMedia(card);
@@ -4592,11 +4903,11 @@
             }
             if (img) delete img.dataset.usingObjectUrl;
         }
-        if (record?.objectUrl) {
+        if (!skipRecordUrlCleanup && record?.objectUrl) {
             revokeObjectUrl(record.objectUrl);
             record.objectUrl = null;
         }
-        resultsData.delete(taskId);
+        if (!keepRecord) resultsData.delete(taskId);
     }
 
     async function purgeResultRecord(taskId, metaOverride = null) {
@@ -5051,31 +5362,7 @@
             return { imported: 0, rendered: 0, stagedReload: false };
         }
 
-        if (!canRenderImmediately) {
-            return { imported: newRecords.length, rendered: 0, stagedReload: true };
-        }
-
-        const fragment = document.createDocumentFragment();
-        let renderCount = 0;
-        newRecords.forEach((record) => {
-            rememberResultRecord(record.taskId, {
-                meta: record.meta,
-                prompt: record.prompt,
-                timestamp: record.timestamp,
-                listId: record.listId,
-                refImageIds: record.refImageIds || []
-            });
-            const card = createCardElementOnly(record);
-            if (card) {
-                fragment.appendChild(card);
-                renderCount++;
-            }
-        });
-        if (renderCount && fragment.hasChildNodes()) {
-            insertBeforeListMoveCard(fragment);
-            filterResultsView();
-        }
-        return { imported: newRecords.length, rendered: renderCount, stagedReload: false };
+        return { imported: newRecords.length, rendered: 0, stagedReload: false };
     }
 
     async function syncResultsFromDirectory() {
@@ -5087,10 +5374,7 @@
             await loadCardOrderFromDisk(true);
             
             let imported = 0;
-            let renderedDuringSync = 0;
-            let stagedReload = false;
-            const hasAnyCards = resultsEl && resultsEl.querySelector(".result-card:not(.skeleton)");
-            let canRenderImmediately = !!hasAnyCards;
+            const canRenderImmediately = false;
             const foundListIds = new Set(); 
             if (listConfig.lists.has(MAIN_LIST_ID)) foundListIds.add(MAIN_LIST_ID);
             const batchHandles = [];
@@ -5101,10 +5385,6 @@
                     foundListIds
                 });
                 imported += stats.imported;
-                renderedDuringSync += stats.rendered;
-                if (stats.stagedReload) {
-                    stagedReload = true;
-                }
             };
 
             try {
@@ -5134,13 +5414,8 @@
                     saveListPreferences();
                     renderListTabs();
                 }
-
-                if (stagedReload) {
-                    await loadNextResultsPage({ reset: true });
-                } else if (renderedDuringSync) {
-                    applyStoredCardOrder();
-                    filterResultsView();
-                }
+                await rebuildTaskIndexFromDb();
+                await renderActivePage({ reason: "disk-sync" });
             } catch (err) {
                 console.warn("Failed to read output directory", err);
                 setTemporaryErrorStatus("Failed to read directory, please re-authorize.");
@@ -5192,8 +5467,11 @@
           footer.appendChild(reuseBtn);
       }
       const disposeFailureCard = () => {
-        cleanupResultRecord(taskId, card); 
-        card.remove();
+        cleanupResultRecord(taskId, card);
+        removeTaskFromOrder(taskId);
+        removeTaskIndexEntry(taskId);
+        taskRuntimeInfo.delete(taskId);
+        renderActivePage({ reason: "failure-dispose" });
       };
 
       if (typeof retryHandler === "function") {
@@ -5205,8 +5483,6 @@
               const scheduled = retryHandler();
               if (!scheduled) return;
               disposeFailureCard();
-              updateResultsCount();
-              captureOrderFromDom();
           });
           footer.appendChild(retryBtn);
       }
@@ -5218,8 +5494,6 @@
         if (!confirmAction(e, "Discard this error card?")) return;
         disposeFailureCard();
         removePendingTask(taskId);
-        updateResultsCount();
-        captureOrderFromDom();
       });
       footer.appendChild(removeBtn);
       card.appendChild(title);
@@ -5229,13 +5503,32 @@
     }
 
     function renderCancelledCard(cardElement, taskId) {
+      const listId = cardElement?.dataset?.listId || taskIndex.get(taskId)?.listId || MAIN_LIST_ID;
+      const timestamp = Date.now();
+      upsertTaskIndexEntry(taskId, {
+        listId,
+        timestamp,
+        type: TASK_TYPES.FAILURE
+      });
+      setTaskRuntimeInfo(taskId, {
+        status: "cancelled",
+        errorMessage: "Task terminated by user.",
+        listId,
+        timestamp
+      });
+      ensureTaskInOrder(taskId, "start");
+      removePendingTask(taskId);
+      renderActivePage({ reason: "cancelled" });
+    }
+
+    function buildCancelledCardElement(options = {}) {
+      const { taskId, listId = MAIN_LIST_ID, timestamp = Date.now() } = options;
       const card = document.createElement("div");
       card.className = "result-card";
       card.style.opacity = "0.7";
       card.dataset.taskId = taskId;
-      const listId = cardElement?.dataset?.listId || MAIN_LIST_ID;
       card.dataset.listId = listId;
-      card.dataset.createdAt = String(Date.now());
+      card.dataset.createdAt = String(timestamp);
       const title = document.createElement("div");
       title.className = "result-title";
       title.innerHTML = `<span>ABORTED</span><span class="badge cancel">CANCEL</span>`;
@@ -5249,36 +5542,36 @@
       removeBtn.textContent = "REMOVE";
       removeBtn.onclick = (e) => { 
         if (!confirmAction(e, "Remove this card?")) return;
-        card.remove(); 
-        updateResultsCount(); 
-        captureOrderFromDom(); };
+        cleanupResultRecord(taskId, card);
+        removeTaskFromOrder(taskId);
+        removeTaskIndexEntry(taskId);
+        taskRuntimeInfo.delete(taskId);
+        renderActivePage({ reason: "cancelled-remove" });
+      };
       footer.appendChild(removeBtn);
       card.appendChild(title);
       card.appendChild(msg);
       card.appendChild(footer);
-      cardElement.replaceWith(card);
-      removePendingTask(taskId);
-      filterResultsView();
+      return card;
     }
 
     function renderErrorCard(taskId, error, canRetryFunc) {
-      const skeleton = document.querySelector(`.result-card[data-task-id="${taskId}"]`);
       const failureRecord = markPendingTaskFailed(taskId, error?.message || "Unknown Error");
-      const listId = (skeleton?.dataset?.listId) || failureRecord?.listId || MAIN_LIST_ID;
+      const listId = failureRecord?.listId || taskIndex.get(taskId)?.listId || MAIN_LIST_ID;
       const retryHandler = () => retryPendingTask(taskId, canRetryFunc);
-      const card = buildFailureCardElement({
-          taskId,
+      upsertTaskIndexEntry(taskId, {
+          listId,
+          timestamp: failureRecord?.createdAt || Date.now(),
+          type: TASK_TYPES.FAILURE
+      });
+      setTaskRuntimeInfo(taskId, {
           errorMessage: failureRecord?.errorMessage || error?.message || "Unknown Error",
-          retryHandler,
           allowReuse: !!failureRecord,
           listId,
           timestamp: failureRecord?.createdAt || Date.now()
       });
-      if (skeleton) skeleton.replaceWith(card);
-      else insertAtResultsTop(card);
-      // observeCardMedia(card); // Removed to prevent leak: error cards have no media
-      updateResultsCount();
-      filterResultsView();
+      ensureTaskInOrder(taskId, "start");
+      renderActivePage({ reason: "error-card" });
     }
 
     /* --- Generation Logic --- */
@@ -5728,7 +6021,7 @@
                 } else {
                     renderErrorCard(taskId, err, () => {
                         const newId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-                        createSkeletonCard(newId);
+                        createSkeletonCard(newId, { listId: MAIN_LIST_ID });
                         executeTask(newId, config);
                     });
                     break;
@@ -5783,50 +6076,18 @@
     });
 
     clearResultsBtn.addEventListener("click", async (e) => {
-        const hasItems = resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${MAIN_LIST_ID}"]`).length > 0;
-        if (!hasItems) return;
-        if (!confirmAction(e, "⚠️ PURGE ALL \n\nDelete all visible results in the Main list? This cannot be undone.")) return;
-          const completedCards = Array.from(resultsEl.querySelectorAll(`.result-card:not(.skeleton)[data-list-id="${MAIN_LIST_ID}"]`));
-          if (!completedCards.length) return;
-          const ids = completedCards.map(card => card.dataset.taskId).filter(Boolean);
-          const deleteTargets = ids.map(id => ({ id, meta: resultsData.get(id)?.meta }));
-          completedCards.forEach(card => {
-              const taskId = card.dataset.taskId;
-              if (taskId) cleanupResultRecord(taskId, card);
-              card.remove();
-              if (taskId) removePendingTask(taskId);
-          });
-          captureOrderFromDom();
-          filterResultsView();
-          try {
-            const db = await openDB();
-            const tx = db.transaction([STORE_RESULTS, STORE_PAYLOADS], "readwrite");
-            const metaStore = tx.objectStore(STORE_RESULTS);
-            const payloadStore = tx.objectStore(STORE_PAYLOADS);
-            ids.forEach(id => {
-                metaStore.delete(id);
-                payloadStore.delete(id);
-            });
-          } catch(e) { console.error(e); }
-          await Promise.all(deleteTargets.map(({ id, meta }) => deleteResultFiles(id, meta)));
+        const ids = getOrderedTaskIdsForList(MAIN_LIST_ID)
+            .filter(taskId => taskIndex.get(taskId)?.type !== TASK_TYPES.SKELETON);
+        if (!ids.length) return;
+        if (!confirmAction(e, "⚠️ PURGE ALL \n\nDelete all results in the Main list? This cannot be undone.")) return;
+        for (const taskId of ids) {
+            await purgeResultRecord(taskId);
+            removeTaskFromOrder(taskId);
+            removeTaskIndexEntry(taskId);
+            removePendingTask(taskId);
+        }
+        renderActivePage({ reason: "clear-main" });
     });
-
-    function pruneDomNodes() {
-        const container = document.getElementById("results");
-        const cards = Array.from(container.querySelectorAll(".result-card:not(.skeleton)"));
-        if (cards.length <= MAX_DOM_CARDS) return;
-
-        const cardsToRemove = cards.slice(MAX_DOM_CARDS);
-        cardsToRemove.forEach(card => {
-            const taskId = card.dataset.taskId;
-            if (taskId) {
-                cleanupResultRecord(taskId, card);
-            } else {
-                offloadCardMedia(card);
-            }
-            card.remove();
-        });
-    }
 
     // --- NEW RESET LOGIC ---
     resetAppBtn.addEventListener("click", async () => {
