@@ -3737,10 +3737,11 @@
             originalName: metaExtras.originalName || label || ""
         };
         const timestamp = Date.now();
+        const shouldSkipSave = metaExtras.skipDiskSave !== undefined ? metaExtras.skipDiskSave : !folderAccessGranted;
         await renderImageCard(taskId, base64Data, meta, label || "", {
             listId: REF_LIST_ID,
             timestamp,
-            skipDiskSave: !folderAccessGranted,
+            skipDiskSave: shouldSkipSave,
             refImageIds: [],
             persistToDb: true
         });
@@ -3988,7 +3989,8 @@
         const taskId = await createRefAssetFromBase64(base64Data, mimeType, fileName, {
             ...metaExtras,
             source: metaExtras.source || "ref-import",
-            originalName: metaExtras.originalName || fileName || ""
+            originalName: metaExtras.originalName || fileName || "",
+            skipDiskSave: false
         });
         if (taskId) {
             await addRefSelectionForTask(taskId, { label: fileName || "Reference", sourceListId: REF_LIST_ID, mimeType });
