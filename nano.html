@@ -3848,6 +3848,12 @@
     }
 
     function renderRefImageList() {
+	const oldImages = refImageListEl.querySelectorAll("img");
+	oldImages.forEach(img => {
+        	if (img.src && img.src.startsWith("blob:")) {
+            	URL.revokeObjectURL(img.src);
+        	}
+    	});
         refImageListEl.innerHTML = "";
         if (!refImages.length) {
             refImageHintEl.textContent = "No reference data loaded.";
@@ -3861,12 +3867,20 @@
             thumbWrap.className = "ref-thumb-wrap";
             const imageEl = document.createElement("img");
             if (entry.thumbnail) {
+		if (entry.thumbnail instanceof Blob) {
+        		imageEl.src = URL.createObjectURL(entry.thumbnail);
+    		} else {
                 imageEl.src = entry.thumbnail;
+		}
             } else {
                 imageEl.src = REF_PLACEHOLDER_IMG;
                 ensureRefEntryThumbnail(entry).then((thumb) => {
                     if (thumb && imageEl.isConnected) {
+			if (thumb instanceof Blob) {
+                	imageEl.src = URL.createObjectURL(thumb);
+            		} else {
                         imageEl.src = thumb;
+			}
                     }
                 }).catch(console.error);
             }
