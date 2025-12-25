@@ -66,10 +66,11 @@ Master the interface with these undocumented hotkeys:
 | **`Q`** | **Quick Locator** | Instantly scrolls to and highlights the last viewed image in the feed. |
 | **`F`** | **Jump to Ref** | Switches the active view to the `REF` (Reference) list immediately. |
 | **`Esc`(E)** | **Close / Cancel** | Closes the Lightbox or cancels the Import dialog. |
-| **`←`(A) / `→`(D)** | **Navigation** | Navigate through images inside the Lightbox. |
+| **`←`(A) / `→`(D)** | **Navigation** | Navigate through pages or images. |
 | **`Z`** | **Zoom In** | Incrementally zoom into the image (Lightbox only). |
 | **`X`** | **Zoom Out** | Incrementally zoom out (Lightbox only). |
 | **`C`** | **Center/Reset** | Reset zoom level to 100% (Lightbox only). |
+| **`M`** | **List Transfer** | Move all cards in the current list to another list|
 
 ### 🖱️ Drag & Drop Mechanics
 
