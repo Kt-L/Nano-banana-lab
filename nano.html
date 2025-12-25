@@ -332,6 +332,12 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
     .btn-mini:hover { border-color: #cbd5e1; background: #f8fafc; color: var(--text-main); }
+    .btn-mini.drag-page-hover {
+      border-color: #60a5fa;
+      background: #eff6ff;
+      color: #1d4ed8;
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
+    }
     .btn-mini.danger { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
     .btn-mini.info { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
     .btn-mini.info:hover { background: #dbeafe; }
@@ -582,6 +588,15 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
       content-visibility: auto;
       contain-intrinsic-size: 160px 250px;
+    }
+    .result-card.drag-hold {
+      position: fixed;
+      left: -9999px;
+      top: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
     }
     .result-card.unseen {
       border: 2px solid #ef4444;
@@ -1600,6 +1615,11 @@
     let cardOrderLoadedFromDisk = false;
     let cardOrderLoadPromise = null;
     let draggingCardId = null;
+    let draggingCardEl = null;
+    let dragPaginationActive = false;
+    let dragPageHoverTimer = null;
+    let dragPageHoverDirection = 0;
+    let dragPageHoverEl = null;
     let dragHoverState = null;
     let dragOriginInfo = null;
     const MIN_CARD_SORT_DRAG_DISTANCE = 12;
@@ -1899,14 +1919,17 @@
         markCardOrderDirty();
     }
 
+    function ensureCardOrderReady() {
+        if (cardOrder.length) return;
+        cardOrder = Array.from(taskIndex.entries())
+            .filter(([, meta]) => meta)
+            .sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0))
+            .map(([taskId]) => taskId);
+    }
+
     function applyVisibleOrderToGlobal(listId, visibleIds) {
         if (!listId || !Array.isArray(visibleIds) || !visibleIds.length) return;
-        if (!cardOrder.length) {
-            cardOrder = Array.from(taskIndex.entries())
-                .filter(([, meta]) => meta)
-                .sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0))
-                .map(([taskId]) => taskId);
-        }
+        ensureCardOrderReady();
         const orderedVisible = visibleIds.filter(id => taskIndex.get(id)?.listId === listId);
         if (!orderedVisible.length) return;
         const targetSet = new Set(orderedVisible);
@@ -1925,6 +1948,44 @@
             cardOrder = updated;
             markCardOrderDirty();
         }
+    }
+
+    function moveCardInOrder(taskId, targetTaskId, insertBefore) {
+        if (!taskId || !targetTaskId || taskId === targetTaskId) return false;
+        ensureCardOrderReady();
+        if (!cardOrder.length) return false;
+        const fromIndex = cardOrder.indexOf(taskId);
+        if (fromIndex === -1) return false;
+        cardOrder.splice(fromIndex, 1);
+        const targetIndex = cardOrder.indexOf(targetTaskId);
+        if (targetIndex === -1) {
+            cardOrder.splice(fromIndex, 0, taskId);
+            return false;
+        }
+        const insertIndex = insertBefore ? targetIndex : targetIndex + 1;
+        cardOrder.splice(insertIndex, 0, taskId);
+        markCardOrderDirty();
+        return true;
+    }
+
+    function moveCardToListEnd(taskId, listId) {
+        if (!taskId || !listId) return false;
+        ensureCardOrderReady();
+        if (!cardOrder.length) return false;
+        const fromIndex = cardOrder.indexOf(taskId);
+        if (fromIndex === -1) return false;
+        cardOrder.splice(fromIndex, 1);
+        let insertIndex = cardOrder.length;
+        for (let i = cardOrder.length - 1; i >= 0; i -= 1) {
+            const meta = taskIndex.get(cardOrder[i]);
+            if (meta?.listId === listId) {
+                insertIndex = i + 1;
+                break;
+            }
+        }
+        cardOrder.splice(insertIndex, 0, taskId);
+        markCardOrderDirty();
+        return true;
     }
 
     function captureOrderFromDom() {
@@ -2014,6 +2075,7 @@
         const cards = Array.from(resultsEl.querySelectorAll(".result-card"));
         cards.forEach(card => {
             const taskId = card.dataset.taskId;
+            if (draggingCardId && taskId === draggingCardId) return;
             if (taskId) {
                 cleanupResultRecord(taskId, card, {
                     keepObserver: true,
@@ -2176,6 +2238,7 @@
         const clampedCurrent = Math.min(Math.max(currentIndex, 0), totalPages - 1);
         if (clampedCurrent !== currentIndex) {
             clampPageIndex(activeListId, clampedCurrent);
+            prepareDragForPagination();
             renderActivePage({ reason: "pagination", preserveScroll: true });
             return;
         }
@@ -2183,6 +2246,7 @@
         const nextIndex = currentIndex + delta;
         const { pageIndex } = clampPageIndex(activeListId, nextIndex);
         if (pageIndex === currentIndex) return;
+        prepareDragForPagination();
         renderActivePage({ reason: "pagination", preserveScroll: true });
     }
 
@@ -2256,6 +2320,64 @@
                 card.classList.remove("drag-sort-before", "drag-sort-after");
             });
         dragHoverState = null;
+    }
+
+    function setDragHoldState(active) {
+        if (!draggingCardEl) return;
+        if (active) draggingCardEl.classList.add("drag-hold");
+        else draggingCardEl.classList.remove("drag-hold");
+    }
+
+    function clearDragPageHover() {
+        if (dragPageHoverTimer) {
+            clearTimeout(dragPageHoverTimer);
+            dragPageHoverTimer = null;
+        }
+        dragPageHoverDirection = 0;
+        if (dragPageHoverEl) {
+            dragPageHoverEl.classList.remove("drag-page-hover");
+            dragPageHoverEl = null;
+        }
+    }
+
+    function scheduleDragPageChange(delta, el) {
+        if (!draggingCardId) return;
+        if (dragPageHoverDirection === delta && dragPageHoverTimer) return;
+        clearDragPageHover();
+        dragPageHoverDirection = delta;
+        dragPageHoverEl = el || null;
+        if (dragPageHoverEl) dragPageHoverEl.classList.add("drag-page-hover");
+        dragPageHoverTimer = setTimeout(() => {
+            dragPageHoverTimer = null;
+            dragPageHoverDirection = 0;
+            if (dragPageHoverEl) {
+                dragPageHoverEl.classList.remove("drag-page-hover");
+                dragPageHoverEl = null;
+            }
+            changePageBy(delta);
+        }, 350);
+    }
+
+    function prepareDragForPagination() {
+        if (!draggingCardId) return;
+        dragPaginationActive = true;
+        setDragHoldState(true);
+        clearDragPageHover();
+        clearCardSortHints();
+    }
+
+    function finalizeCardDrag() {
+        const shouldRefresh = dragPaginationActive;
+        dragPaginationActive = false;
+        clearDragPageHover();
+        setDragHoldState(false);
+        draggingCardEl = null;
+        draggingCardId = null;
+        clearCardSortHints();
+        clearCardDragOrigin();
+        if (shouldRefresh) {
+            renderActivePage({ reason: "drag-paginate", preserveScroll: true });
+        }
     }
 
     function recordCardDragOrigin(e, card) {
@@ -2371,7 +2493,7 @@
         }
         if (!isCardSortDragEvent(e)) return;
         e.preventDefault();
-        const dragged = draggingCardId ? document.querySelector(`.result-card[data-task-id="${draggingCardId}"]`) : null;
+        const dragged = draggingCardEl || (draggingCardId ? document.querySelector(`.result-card[data-task-id="${draggingCardId}"]`) : null);
         let targetCard = e.target.closest(".result-card");
         if (targetCard && (!targetCard.dataset.taskId || targetCard.dataset.placeholder === "true")) {
             targetCard = null;
@@ -2390,21 +2512,45 @@
         }
         const droppedOnSelf = targetCard === dragged;
         const hasValidTarget = targetCard && targetCard.dataset.listId === listConfig.active && targetCard !== dragged;
+        let insertBefore = null;
         if (!hasValidTarget) {
             const reverted = (droppedOnSelf || isTinyMovement) ? restoreCardToOrigin() : false;
             if (!reverted) {
                 insertCardAtActiveListEnd(dragged);
             }
         } else {
-            const insertBefore = (dragHoverState && dragHoverState.card === targetCard && typeof dragHoverState.insertBefore === "boolean")
+            insertBefore = (dragHoverState && dragHoverState.card === targetCard && typeof dragHoverState.insertBefore === "boolean")
                 ? dragHoverState.insertBefore
                 : shouldInsertBefore(e, targetCard);
             if (insertBefore) resultsEl.insertBefore(dragged, targetCard);
             else resultsEl.insertBefore(dragged, targetCard.nextSibling);
         }
+        setDragHoldState(false);
         clearCardSortHints();
-        captureOrderFromDom();
+        if (dragPaginationActive) {
+            if (draggingCardId && hasValidTarget && typeof insertBefore === "boolean" && targetCard) {
+                moveCardInOrder(draggingCardId, targetCard.dataset.taskId, insertBefore);
+            } else if (draggingCardId && !hasValidTarget) {
+                moveCardToListEnd(draggingCardId, listConfig.active || MAIN_LIST_ID);
+            }
+        } else {
+            captureOrderFromDom();
+        }
         clearCardDragOrigin();
+    }
+
+    function handlePagerDragOver(e, delta, btn) {
+        if (!isCardSortDragEvent(e)) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+        scheduleDragPageChange(delta, btn);
+    }
+
+    function handlePagerDrop(e) {
+        if (!isCardSortDragEvent(e)) return;
+        e.preventDefault();
+        clearDragPageHover();
+        restoreCardToOrigin();
     }
 
 
@@ -2427,6 +2573,18 @@
     const pageIndicator = document.getElementById("pageIndicator");
     if (pagePrevBtn) pagePrevBtn.addEventListener("click", () => changePageBy(-1));
     if (pageNextBtn) pageNextBtn.addEventListener("click", () => changePageBy(1));
+    if (pagePrevBtn) {
+        pagePrevBtn.addEventListener("dragenter", (e) => handlePagerDragOver(e, -1, pagePrevBtn));
+        pagePrevBtn.addEventListener("dragover", (e) => handlePagerDragOver(e, -1, pagePrevBtn));
+        pagePrevBtn.addEventListener("dragleave", () => clearDragPageHover());
+        pagePrevBtn.addEventListener("drop", handlePagerDrop);
+    }
+    if (pageNextBtn) {
+        pageNextBtn.addEventListener("dragenter", (e) => handlePagerDragOver(e, 1, pageNextBtn));
+        pageNextBtn.addEventListener("dragover", (e) => handlePagerDragOver(e, 1, pageNextBtn));
+        pageNextBtn.addEventListener("dragleave", () => clearDragPageHover());
+        pageNextBtn.addEventListener("drop", handlePagerDrop);
+    }
 
     function getListMoveCardAnchor() {
         return null;
@@ -3835,6 +3993,23 @@
             lightboxImage.style.transform = `translate(0px, 0px) scale(1)`;
         }
 
+        function handleDragPaginationKey(e) {
+        if (!draggingCardId) return;
+        if (lightbox.classList.contains("visible")) return;
+        if (importOverlayEl && !importOverlayEl.classList.contains("hidden")) return;
+        if (listMoveOverlayEl && !listMoveOverlayEl.classList.contains("hidden")) return;
+        const keyLower = e.key?.toLowerCase();
+        if (e.key === "ArrowLeft" || e.key === "PageUp" || e.keyCode === 37 || keyLower === "a" || e.code === "BracketLeft") {
+            e.preventDefault();
+            changePageBy(-1);
+        }
+        if (e.key === "ArrowRight" || e.key === "PageDown" || e.keyCode === 39 || keyLower === "d" || e.code === "BracketRight") {
+            e.preventDefault();
+            changePageBy(1);
+        }
+        }
+
+        document.addEventListener("keydown", handleDragPaginationKey, true);
         document.addEventListener("keydown", (e) => {
         const keyLower = e.key?.toLowerCase();
         if (e.key === "Escape") {
@@ -4503,14 +4678,15 @@
       card.addEventListener("dragstart", (e) => {
           e.dataTransfer.setData("application/x-nano-card-id", taskId);
           draggingCardId = taskId;
+          draggingCardEl = card;
+          dragPaginationActive = false;
+          setDragHoldState(false);
           e.dataTransfer.setData("application/x-nano-card-sort", taskId);
           e.dataTransfer.effectAllowed = "move";
           recordCardDragOrigin(e, card);
       });
       card.addEventListener("dragend", () => {
-          draggingCardId = null;
-          clearCardSortHints();
-          clearCardDragOrigin();
+          if (draggingCardId === taskId) finalizeCardDrag();
       });
 
       const title = document.createElement("div");
@@ -4573,6 +4749,9 @@
         e.dataTransfer.setData("application/x-nano-card-id", taskId);
         e.dataTransfer.setData("application/x-nano-internal-drag", "true");
         draggingCardId = taskId;
+        draggingCardEl = card;
+        dragPaginationActive = false;
+        setDragHoldState(false);
         e.dataTransfer.effectAllowed = "copyMove";
         const shim = ensureTransparentDragImage();
         if (shim) {
@@ -4581,11 +4760,7 @@
         recordCardDragOrigin(e, card);
         });
       img.addEventListener("dragend", () => {
-          if (draggingCardId === taskId) {
-              draggingCardId = null;
-              clearCardSortHints();
-              clearCardDragOrigin();
-          }
+          if (draggingCardId === taskId) finalizeCardDrag();
       });
       thumbWrap.appendChild(img);
       thumbWrap.addEventListener("click", () => openLightboxByTaskId(taskId));
