@@ -1,10 +1,10 @@
 # Nano Banana Pro | Future Lab Edition 🍌
 
-**The Ultimate Single-File Interface for Gemini 3 Pro Image.**
+**The Ultimate Single-File Interface for Gemini 3 Pro + Fal AI.**
 
-**Nano Banana Lab** is a serverless, local-first "Lab Environment" for power users utilizing Google's Gemini 3 Pro image generation model. It combines the simplicity of a single HTML file with the power of a desktop-class asset management system.
+**Nano Banana Lab** is a serverless, local-first "Lab Environment" for power users pairing Google's Gemini 3 Pro image generation with Fal AI workflows (Z-Image Turbo / Qwen Image, Flux Inpaint, SeedVR Upscale). It combines the simplicity of a single HTML file with the power of a desktop-class asset management system.
 
-It features **direct disk synchronization**, **advanced batching**, **multimodal reference injection**, and a **persistent local database**.
+It features **direct disk synchronization**, **advanced batching**, **multimodal reference injection**, **multi-provider routing**, **custom Fal payloads**, and a **persistent local database**.
 
 > **⚠️ System Requirement:** Requires a **Chromium-based browser** (Chrome, Edge, Brave, Opera) on Desktop to leverage the *File System Access API*. Firefox and Safari are not currently supported.
 
@@ -35,13 +35,25 @@ Unlike web apps that dump files into "Downloads," Nano Banana Pro binds directly
 ### 3. Parallel Execution Protocol
 
 * **Batch Processing:** Generate up to **20 images** simultaneously.
-* **API Key Rotation:** Add multiple Google API Keys. The system automatically cycles through them to maximize throughput and manage rate limits.
+* **API Key Rotation:** Add multiple API keys per provider. The system automatically cycles through them to maximize throughput and manage rate limits.
 * **Auto-Retry:** Built-in exponential backoff handles network glitches or API overloading automatically.
 
-### 4. Hybrid Persistence Layer
+### 4. Multi-Provider Engine (New)
+
+* **Provider Switch:** Toggle between Google Gemini 3 Pro and Fal AI.
+* **Fal Models:** Z-Image Turbo (default) or Qwen Image (gen/edit).
+* **Image-to-Image:** When using Fal, the **first** reference image becomes the I2I input automatically.
+
+### 5. Hybrid Persistence Layer
 
 * **IndexedDB Cache:** A high-performance local database caches your session, allowing you to load thousands of past results without cluttering memory.
 * **State Recovery:** Accidentally closed the tab? Pending tasks and unread results are restored instantly upon reopening.
+
+### 6. Post-Processing Labs (New)
+
+* **Image Editor (T):** Crop, rotate, adjust, and inpaint masked areas (Fal Flux Pro).
+* **AI Upscale (U):** SeedVR upscale with factor + noise control (Fal).
+* **Compression/Resample (R):** Built-in JPEG optimization with split-view compare.
 
 ---
 
@@ -67,16 +79,48 @@ Master the interface with these undocumented hotkeys:
 | Key | Action | Description |
 | --- | --- | --- |
 | **`R`** | **Compress** | Opens the **Compression Lab** to resize/optimize the current image. |
+| **`T`** | **Image Editor** | Crop/rotate/adjust/inpaint the current image (Lightbox only). |
+| **`U`** | **Upscale** | Opens AI Upscale (Lightbox only; Fal key required). |
 | **`V`** | **Copy** | Copies the current image to your system Clipboard. |
+| **`P`** | **Edit Metadata** | Enter Edit Mode; click a card to edit prompt/resolution/aspect. |
 | **`Q`** | **Quick Locator** | Instantly scrolls to and highlights the last viewed image in the feed. |
 | **`F`** | **Jump to Ref** | Switches the active view to the `REF` (Reference) list immediately. |
 | **`M`** | **Move Overlay** | Toggles the "Move to List" panel (when not in Lightbox). |
 | **`W`** | **Compare Mode** | Enter split-view compare selection; pick two cards to compare. |
+| **`Alt` + `Enter`** | **Custom Task** | Opens the Fal Custom Task overlay from the prompt input. |
 | **`Esc`(E)** | **Close / Cancel** | Closes the Lightbox, Compression Lab, or cancels Import dialogs. |
 | **`←`(A) / `→`(D)** | **Navigation** | Navigate through pages or images. |
 | **`Z`** | **Zoom In** | Incrementally zoom into the image (Lightbox only). |
 | **`X`** | **Zoom Out** | Incrementally zoom out (Lightbox only). |
 | **`C`** | **Center/Reset** | Reset zoom level to 100% (Lightbox only). |
+
+### 🧩 Metadata Editing & Import Notes (New)
+
+*   **Import w/ Notes:** Use `IMPORT IMAGE` or drag into the output stream to create cards with optional prompt/resolution/aspect notes.
+*   **Edit Mode:** Press **`P`**, then click a card to update its prompt/resolution/aspect (synced to disk metadata).
+
+### 🧰 Image Editor & Inpaint (New)
+
+Open the Lightbox and press **`T`**.
+
+*   **Tools:** Crop, rotate, brightness/contrast/saturation/grayscale adjustments.
+*   **Inpaint:** Paint a mask + enter a prompt to fill areas (Fal Flux Pro).
+*   **Save Paths:** Save as **New** or **Overwrite** the original.
+
+### 🔬 AI Upscale (New)
+
+Press **`U`** in the Lightbox.
+
+*   **SeedVR Upscale:** Set upscale factor + noise.
+*   **Result:** Saved as a new card (Fal API key required).
+
+### 🧪 Custom Task Protocol (Fal) (New)
+
+Press **`Alt` + `Enter`** inside the prompt field to open the Custom Task overlay.
+
+*   **Endpoint + Payload:** Define any Fal endpoint path and a custom payload schema.
+*   **Auto-Injection:** Prompt and the **first** reference image are injected automatically.
+*   **Local Profile:** Your payload config is saved in LocalStorage for reuse.
 
 ### 🧪 Split-View Compare Mode (New)
 
@@ -106,18 +150,20 @@ A built-in studio for post-processing your generations without leaving the app. 
 
 ## ⚙️ Configuration Guide
 
-1. **API Key Setup:**
-* Get your key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-* Enter it in the "Configuration" panel.
-* *Tip:* Click `+ Add Key` to input multiple keys for heavy batch workloads.
-
+1. **Provider & API Keys:**
+* Select a provider (Google or Fal AI) in the Configuration panel.
+* Get your Google key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+* Get your Fal key from [Fal AI](https://fal.ai/dashboard/keys).
+* *Tip:* Click `+ Add Key` to input multiple keys per provider for heavy batch workloads.
+* **Fal Models:** Z-Image Turbo (default) or Qwen Image (gen/edit).
+* **Fal Features:** Inpaint, Upscale, and Custom Tasks require a Fal API key even if you generate with Google.
 
 2. **Reference Inputs (Multimodal):**
 * Supports `image/png`, `image/jpeg`, and `image/webp`.
-* **Limit:** Up to 14 reference images per generation task.
+* **Limit:** Up to 14 reference images per generation task (Gemini).
+* **Fal I2I:** The **first** reference image is used for Fal image-to-image.
 * **Clipboard Paste:** Use the `PASTE` button to add an image from your clipboard.
 * **Prompting:** The model treats these as visual context. Use the prompt to describe how to use them (e.g., "Use the composition of image 1 and the style of image 2").
-
 
 3. **Output Files:**
 * Images are saved as `nano-{timestamp}-{random}.png`.
@@ -138,6 +184,11 @@ A built-in studio for post-processing your generations without leaving the app. 
 * This means you hit the Google API rate limit.
 * **Solution:** Add more API keys to the rotation pool or enable "Auto-Retry" in settings.
 
+**"Fal task failed / Missing Fal API Key"**
+
+* Inpaint, Upscale, and Custom Task workflows require a Fal API key.
+* Switch the provider to **Fal AI** and add at least one key in Configuration.
+
 **"Reset All"**
 
 * The hidden **⚠ RESET ALL** button (top right) performs a factory reset. It wipes `LocalStorage` (settings/keys) and `IndexedDB` (history). Use with caution.
@@ -147,7 +198,7 @@ A built-in studio for post-processing your generations without leaving the app. 
 ## 🔒 Privacy & Architecture
 
 * **Local-First:** All logic runs in your browser.
-* **Direct Connection:** Requests go directly from your browser to `generativelanguage.googleapis.com`. No middleman servers.
+* **Direct Connection:** Requests go directly from your browser to `generativelanguage.googleapis.com` (Google) and `fal.run` (Fal). No middleman servers.
 * **Data Ownership:** Your keys and images never leave your control.
 
 ---

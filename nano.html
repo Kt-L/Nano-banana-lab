@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-US">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Nano Banana Pro | Future Lab Edition</title>
@@ -1356,6 +1356,37 @@
       justify-content: flex-end;
       gap: 8px;
     }
+    /* New Edit Modes */
+    #lightboxEditTools .lightbox-main-area {
+        background-color: #0f172a; 
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #lbEditWrapper {
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        display: block;
+    }
+    .crop-handle {
+        z-index: 100;
+        border: 1px solid rgba(0,0,0,0.2);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    #lbMaskTools input[type=range] {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        height: 4px;
+        padding: 0;
+    }
+    #lbMaskTools input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        background: white;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-top: -4px; 
+    }
   </style>
 </head>
 <body>
@@ -1399,6 +1430,31 @@
       </div>
     </div>
   </div>
+
+  <div id="customTaskOverlay" class="import-overlay hidden" aria-modal="true" role="dialog">
+    <div class="import-panel" role="document" style="width: 600px;">
+      <h2>Custom Task Submission (Fal AI)</h2>
+      <div style="margin-bottom: 12px;">
+        <label for="customEndpoint" style="display:block; margin-bottom: 6px; font-size:12px; font-weight:600; color:var(--text-sub);">ENDPOINT (model path)</label>
+        <input type="text" id="customEndpoint" placeholder="e.g. fal-ai/fast-sdxl" style="width:100%; font-family:var(--font-mono);">
+      </div>
+      
+      <div style="margin-bottom: 16px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; background: #f8fafc; max-height: 300px; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="margin:0;">PAYLOAD CONFIGURATION</label>
+            <button id="addPayloadItemBtn" class="btn-mini info" type="button" style="padding: 2px 8px; font-size: 11px;">+ Add Item</button>
+        </div>
+        <div id="payloadList" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
+            <!-- Payload items will be injected here -->
+        </div>
+      </div>
+
+      <div class="import-actions">
+        <button id="customTaskCancelBtn" class="btn-mini danger" type="button">Cancel</button>
+        <button id="customTaskSubmitBtn" class="btn-mini primary" type="button">Submit Task</button>
+      </div>
+    </div>
+  </div>
   <header style="position: relative;">
     <h1>Nano Banana Pro <span style="font-size: 12px; background: var(--text-accent); color: #fff; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 8px; font-family: var(--font-mono);">LAB</span></h1>
     <div class="subtitle">
@@ -1415,6 +1471,24 @@
         CONFIGURATION
         <span class="pill">Gemini 3 Pro</span>
       </div>
+
+      <div style="margin-bottom: 16px;">
+        <label for="providerSelect">PROVIDER</label>
+        <select id="providerSelect">
+          <option value="google" selected>Google</option>
+          <option value="fal">Fal AI</option>
+        </select>
+        <div id="providerHint" class="small-text" style="display:none;"></div>
+      </div>
+
+            <div id="falModelGroup" class="config-group" style="display:none; margin-top: -4px;">
+                <label for="falModelSelect">FAL MODEL</label>
+                <select id="falModelSelect">
+                    <option value="default" selected>default (z-image-turbo)</option>
+                    <option value="qwen-image">qwen-image</option>
+                </select>
+                <div class="small-text" style="margin-top: 4px;">Applies only when provider is Fal AI.</div>
+            </div>
 
       <div class="api-input">
         <label id="apiKeyLabel">API KEY ACCESS</label>
@@ -1590,11 +1664,11 @@
                             <div class="lightbox-tools-title">Compression / Resampling Lab (R)</div>
                             <div class="lightbox-chip" id="lbSourceInfo"></div>
                             <div class="lightbox-chip" id="lbSizeInfo"></div>
-                            <div class="lightbox-chip pill" id="lbStatusChip">Waiting to Load</div>
+                            <div class="lightbox-chip pill" id="lbStatusChip">Pending</div>
                             <div class="lightbox-actions" style="margin-left:auto;">
                                 <button type="button" class="btn-mini" id="lbRefreshPreviewBtn">Refresh Preview</button>
-                                <button type="button" class="btn-mini info" id="lbSaveCompressedBtn">Compress and Create Card</button>
-                                <button type="button" class="btn-mini danger" id="lbReplaceCompressedBtn">Compress and Replace</button>
+                                <button type="button" class="btn-mini info" id="lbSaveCompressedBtn">Compress & New Card</button>
+                                <button type="button" class="btn-mini danger" id="lbReplaceCompressedBtn">Compress & Replace</button>
                                 <button type="button" class="btn-mini" id="lbExitCompressBtn">Exit</button>
                             </div>
                         </div>
@@ -1602,10 +1676,10 @@
                         <div class="lightbox-field">
                             <label for="lbResizeMode">Resize Options</label>
                             <select id="lbResizeMode">
-                                <option value="scale">Scale Proportionally</option>
-                                <option value="custom">Custom Resolution</option>
+                                <option value="scale">Scale proportionally</option>
+                                <option value="custom">Custom resolution</option>
                             </select>
-                            <div class="lightbox-help">Enter a percentage or an exact resolution.</div>
+                            <div class="lightbox-help">Enter a percentage or a specific resolution.</div>
                         </div>
                         <div class="lightbox-field" id="lbScaleRow">
                             <label for="lbScaleInput">Scale (%)</label>
@@ -1615,7 +1689,7 @@
                             </div>
                         </div>
                         <div class="lightbox-field" id="lbCustomRow" style="display:none;">
-                            <label>Target Resolution</label>
+                            <label>Target resolution</label>
                             <div class="lightbox-inline">
                                 <input type="number" id="lbCustomWidth" min="16" step="1" placeholder="Width" />
                                 <input type="number" id="lbCustomHeight" min="16" step="1" placeholder="Height" />
@@ -1625,18 +1699,18 @@
                             </div>
                         </div>
                         <div class="lightbox-field">
-                            <label for="lbQualityInput">Compression Quality (%)</label>
+                            <label for="lbQualityInput">Compression quality (%)</label>
                             <div class="lightbox-row">
                                 <input type="range" id="lbQualityInput" min="35" max="95" step="1" value="82" />
                                 <input type="number" id="lbQualityNumber" min="30" max="100" step="1" value="82" style="width:82px;" />
                             </div>
-                            <div class="lightbox-help">Uses efficient JPEG compression; drag the divider to compare before and after.</div>
+                            <div class="lightbox-help">Use efficient JPEG compression; drag the divider to compare before/after.</div>
                         </div>
                         
                         <div class="lightbox-stats">
                             <div class="lightbox-stat"><span>Original</span><strong id="lbStatBefore">--</strong></div>
                             <div class="lightbox-stat"><span>Compressed</span><strong id="lbStatAfter">--</strong></div>
-                            <div class="lightbox-stat"><span>Saved</span><strong id="lbStatSaved">--</strong></div>
+                            <div class="lightbox-stat"><span>Savings</span><strong id="lbStatSaved">--</strong></div>
                         </div>
                          <div class="lightbox-actions" style="margin-top: 12px;">
                             <span class="pill" id="lbDimensionHint">--</span>
@@ -1646,6 +1720,158 @@
                 </div>
             </div>
             
+            <div id="lightboxUpscaleTools" class="lightbox-tools" aria-live="polite" style="z-index: 25;">
+                <div class="lightbox-tools-container">
+                    <div class="lightbox-main-area" style="display:flex;align-items:center;justify-content:center;">
+                        <img id="lbUpscalePreview" alt="Upscale Source" style="max-width:100%;max-height:100%;object-fit:contain;" />
+                    </div>
+                    <div class="lightbox-sidebar">
+                        <div class="lightbox-tools-header">
+                            <div class="lightbox-tools-title">AI Upscale (SeedVR)</div>
+                            <div class="lightbox-chip pill">Press U to exit</div>
+                        </div>
+
+                         <div class="lightbox-field">
+                            <label for="lbUpscaleFactor">Upscale factor</label>
+                            <div class="lightbox-row">
+                                <input type="number" id="lbUpscaleFactor" min="1" max="10" step="0.5" value="2" style="width: 100%;" />
+                            </div>
+                            <div class="lightbox-help">Default: 2. Higher values generate larger images. Recommended max: 4.</div>
+                        </div>
+
+                         <div class="lightbox-field">
+                            <label for="lbUpscaleNoise">Noise Scale</label>
+                            <div class="lightbox-row">
+                                <input type="range" id="lbUpscaleNoise" min="0" max="1" step="0.05" value="0.1" style="flex:1;" />
+                                <input type="number" id="lbUpscaleNoiseNum" min="0" max="1" step="0.05" value="0.1" style="width:82px;" />
+                            </div>
+                            <div class="lightbox-help">Controls the creativity/noise added. Default: 0.1.</div>
+                        </div>
+
+                        <div class="lightbox-field" style="background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                            <div class="small-text" style="color:var(--text-sub); display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex;justify-content:space-between;">
+                                     <span>Current image size:</span>
+                                     <span id="lbUpscaleOriginSize" style="font-family:var(--font-mono);">--</span>
+                                </div>
+                                 <div style="display:flex;justify-content:space-between;">
+                                     <span>Upscaled resolution:</span>
+                                     <span id="lbUpscaleTargetSize" style="color:var(--tech-blue); font-weight:600; font-family:var(--font-mono);">--</span>
+                                </div>
+                                 <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px; margin-top:2px;">
+                                     <span>Estimated credit cost:</span>
+                                     <span id="lbUpscaleCost" style="color:var(--primary-grad-end); font-weight:600; font-family:var(--font-mono);">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div class="lightbox-actions" style="margin-top:auto;">
+                            <button type="button" class="btn-mini primary" id="lbUpscaleSubmitBtn" style="width:100%">Submit task</button>
+                            <button type="button" class="btn-mini" id="lbUpscaleExitBtn" style="width:100%; margin-top:8px;">Exit (U)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lightboxEditTools" class="lightbox-tools" aria-live="polite" style="z-index: 26;">
+                <div class="lightbox-tools-container">
+                    <div class="lightbox-main-area" style="position: relative; display:flex; align-items:center; justify-content:center; background:#0f172a; overflow:hidden;" id="lbEditContainer">
+                        <div id="lbEditWrapper" style="position:relative;">
+                            <canvas id="lbEditCanvas" style="display:block;"></canvas>
+                            
+                            <!-- Overlay for cropping -->
+                            <div id="lbCropOverlay" style="display:none; position:absolute; top:0; left:0; width:100px; height:100px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); border: 2px solid white; cursor: move; touch-action: none;">
+                                <!-- Edges -->
+                                <div class="crop-handle" data-dir="n" style="position:absolute; width:100%; height:12px; top:-6px; left:0; cursor:n-resize;"></div>
+                                <div class="crop-handle" data-dir="s" style="position:absolute; width:100%; height:12px; bottom:-6px; left:0; cursor:s-resize;"></div>
+                                <div class="crop-handle" data-dir="w" style="position:absolute; width:12px; height:100%; top:0; left:-6px; cursor:w-resize;"></div>
+                                <div class="crop-handle" data-dir="e" style="position:absolute; width:12px; height:100%; top:0; right:-6px; cursor:e-resize;"></div>
+                                <!-- Corners (z-index higher) -->
+                                <div class="crop-handle" data-dir="nw" style="position:absolute; width:12px; height:12px; background:white; top:-6px; left:-6px; cursor:nw-resize; z-index:10; border-radius:2px;"></div>
+                                <div class="crop-handle" data-dir="ne" style="position:absolute; width:12px; height:12px; background:white; top:-6px; right:-6px; cursor:ne-resize; z-index:10; border-radius:2px;"></div>
+                                <div class="crop-handle" data-dir="sw" style="position:absolute; width:12px; height:12px; background:white; bottom:-6px; left:-6px; cursor:sw-resize; z-index:10; border-radius:2px;"></div>
+                                <div class="crop-handle" data-dir="se" style="position:absolute; width:12px; height:12px; background:white; bottom:-6px; right:-6px; cursor:se-resize; z-index:10; border-radius:2px;"></div>
+                            </div>
+    
+                            <!-- Overlay for inpainting mask -->
+                            <canvas id="lbMaskCanvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; z-index: 10; cursor: crosshair;"></canvas>
+                        </div>
+                    </div>
+                    <div class="lightbox-sidebar">
+                        <div class="lightbox-tools-header">
+                            <div class="lightbox-tools-title">Image Editor (T)</div>
+                            <div class="lightbox-chip pill" id="lbEditStatus" style="display:none;">Ready</div>
+                             <div class="lightbox-actions" style="margin-left:auto;">
+                                <button type="button" class="btn-mini primary" id="lbEditSaveNewBtn">Save New</button>
+                                <button type="button" class="btn-mini danger" id="lbEditSaveReplaceBtn">Overwrite</button>
+                                <button type="button" class="btn-mini" id="lbEditExitBtn">Exit</button>
+                            </div>
+                        </div>
+
+                        <div class="lightbox-field">
+                           <div class="section-title" style="margin-bottom:12px; font-size:12px; border-bottom:none;">Tools</div>
+                           <div class="lightbox-actions" style="justify-content:flex-start; margin-top:0;">
+                               <button type="button" class="btn-mini" id="lbCropToggleBtn">Crop</button>
+                               <button type="button" class="btn-mini" id="lbRotateBtn">Rotate</button>
+                               <button type="button" class="btn-mini" id="lbPaintToggleBtn" style="color:var(--primary-grad-end); border-color:rgba(251, 191, 36, 0.3);">Inpaint</button>
+                           </div>
+                        </div>
+
+                         <div id="lbAdjustControls">
+                            <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+                                <button type="button" class="btn-mini" id="lbAdjustResetBtn" style="font-size:11px; padding:2px 8px;">Reset Adjustments</button>
+                            </div>
+                            <div class="lightbox-field">
+                                <label for="lbBrightness">Brightness</label>
+                                <input type="range" id="lbBrightness" min="0" max="200" value="100" />
+                            </div>
+                             <div class="lightbox-field">
+                                <label for="lbContrast">Contrast</label>
+                                <input type="range" id="lbContrast" min="0" max="200" value="100" />
+                            </div>
+                             <div class="lightbox-field">
+                                <label for="lbSaturation">Saturation</label>
+                                <input type="range" id="lbSaturation" min="0" max="200" value="100" />
+                            </div>
+                            <div class="lightbox-field">
+                                <label for="lbGrayscale">Grayscale</label>
+                                <input type="range" id="lbGrayscale" min="0" max="100" value="0" />
+                            </div>
+                         </div>
+                         
+                         <div id="lbInpaintControls" style="display:none;">
+                            <div class="lightbox-field" style="margin-top:16px;">
+                                <label>Brush Size</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input type="range" id="lbBrushSize" min="5" max="150" value="30" style="flex:1;" />
+                                    <button type="button" class="btn-mini danger" id="lbClearMaskBtn" style="font-size:11px;">Clear</button>
+                                </div>
+                            </div>
+                            <div class="lightbox-field" style="border-top:1px dashed var(--panel-border); padding-top:16px;">
+                                <label for="lbInpaintPrompt">Inpaint Prompt <span style="color:var(--text-sub); font-weight:400; font-size:11px;">(Required)</span></label>
+                                <textarea id="lbInpaintPrompt" style="min-height: 80px;" placeholder="Describe what to fill in the masked area..."></textarea>
+                            </div>
+                            
+                            <div class="small-text" style="color:var(--text-sub); display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+                                 <div style="display:flex;justify-content:space-between;">
+                                     <span>Output Resolution:</span>
+                                     <span id="lbInpaintRes" style="font-family:var(--font-mono);">--</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;">
+                                     <span>Rate:</span>
+                                     <span style="font-family:var(--font-mono);">$0.05 / MP</span>
+                                </div>
+                                 <div style="display:flex;justify-content:space-between;border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px; margin-top:2px;">
+                                     <span>Estimated Cost:</span>
+                                     <span id="lbInpaintCost" style="color:var(--primary-grad-end); font-weight:600; font-family:var(--font-mono);">--</span>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn-mini primary" id="lbInpaintSubmitBtn" style="width:100%; margin-top:8px;">Generate Fill</button>
+                            <div class="small-text" style="color:var(--text-sub); margin-top:8px;">
+                                Use the brush to mask the area you want to change.
+                            </div>
+                         </div>
     </div>
   </div>
 
@@ -1681,7 +1907,6 @@
     let refImages = [];
     const REF_IMAGE_LIMIT = 14;
     const DEFAULT_IMAGE_MIME = "image/png";
-    const DEFAULT_PROVIDER = "google";
     const DISK_IMAGE_EXTENSIONS = ["png","jpg","jpeg","webp","gif","bmp"];
     const resultsData = new Map();
     const taskIndex = new Map();
@@ -1847,7 +2072,7 @@
             aspectRatio: typeof entry.aspectRatio === "string" ? entry.aspectRatio : "",
             enableRetry: !!entry.enableRetry,
             maxRetries: typeof entry.maxRetries === "number" ? entry.maxRetries : 0,
-            provider: DEFAULT_PROVIDER,
+            provider: normalizeProvider(entry.provider || "google"),
             listId: typeof entry.listId === "string" ? entry.listId : MAIN_LIST_ID,
             createdAt: typeof entry.createdAt === "number" ? entry.createdAt : Date.now(),
             status: entry.status === "FAILED" ? "FAILED" : "RUNNING",
@@ -1866,7 +2091,7 @@
             aspectRatio: typeof config.aspectRatio === "string" ? config.aspectRatio : "",
             enableRetry: !!config.enableRetry,
             maxRetries: typeof config.maxRetries === "number" ? config.maxRetries : 0,
-            provider: DEFAULT_PROVIDER,
+            provider: normalizeProvider(config.provider || "google"),
             listId: typeof options.listId === "string" ? options.listId : MAIN_LIST_ID,
             createdAt: typeof options.createdAt === "number" ? options.createdAt : Date.now(),
             status: options.status === "FAILED" ? "FAILED" : "RUNNING",
@@ -1909,7 +2134,7 @@
             aspectRatio: typeof record.aspectRatio === "string" ? record.aspectRatio : "",
             enableRetry: !!record.enableRetry,
             maxRetries: typeof record.maxRetries === "number" ? record.maxRetries : 0,
-            provider: DEFAULT_PROVIDER,
+            provider: normalizeProvider(record.provider || activeProvider),
             listId: typeof record.listId === "string" ? record.listId : MAIN_LIST_ID,
             createdAt: typeof record.createdAt === "number" ? record.createdAt : Date.now()
         };
@@ -1926,6 +2151,7 @@
         const record = resolveReusableTaskConfig(taskId);
         if (!record) return;
         const promptOnly = !!options.promptOnly;
+        if (!promptOnly && record.provider) setActiveProvider(record.provider);
         promptInput.value = record.prompt || "";
         promptInput.dispatchEvent(new Event("input", { bubbles: true }));
         if (promptOnly) return;
@@ -1945,7 +2171,8 @@
             return false;
         }
         if (!requireFolderAccess()) return false;
-        const apiKey = getApiKeyManager().getNextKey();
+        const provider = normalizeProvider(record.provider || activeProvider);
+        const apiKey = getApiKeyManager(provider).getNextKey();
         if (!apiKey) { setTemporaryErrorStatus("Please enter at least one API Key."); return false; }
         const newTaskId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
         const newConfig = {
@@ -1956,7 +2183,8 @@
             aspectRatio: record.aspectRatio || "",
             enableRetry: !!record.enableRetry,
             maxRetries: typeof record.maxRetries === "number" ? record.maxRetries : 0,
-            apiKey
+            apiKey,
+            provider
         };
         createSkeletonCard(newTaskId, { listId: record.listId || MAIN_LIST_ID });
         registerPendingTask(newTaskId, newConfig, { listId: record.listId || MAIN_LIST_ID, status: "RUNNING" });
@@ -2012,6 +2240,7 @@
     let transparentDragImage = null;
     let fileDragDepth = 0;
     let importDialogResolver = null;
+    let importBatchMode = false;
     let workingDirectoryHandle = null;
     let folderAccessGranted = false;
     let diskSyncQueued = false;
@@ -2089,9 +2318,14 @@
 
     // LocalStorage Persistence for simple settings
     function saveSettings() {
-        getApiKeyManager().setKeys(getApiKeyValues());
+        getApiKeyManager(activeProvider).setKeys(getApiKeyValues());
         const settings = {
-            apiKeys: apiKeyManagers.google.keys,
+            provider: activeProvider,
+            falModel,
+            apiKeysByProvider: {
+                google: apiKeyManagers.google.keys,
+                fal: apiKeyManagers.fal.keys
+            },
             prompt: promptInput.value,
             resolution: resolutionSelect.value,
             aspectRatio: aspectRatioSelect.value,
@@ -2109,15 +2343,23 @@
             try {
                 const s = JSON.parse(saved);
                 let googleKeys = [];
+                let falKeys = [];
                 if (Array.isArray(s.apiKeys)) {
                     googleKeys = s.apiKeys;
                 }
                 if (s.apiKeysByProvider && typeof s.apiKeysByProvider === "object") {
                     if (Array.isArray(s.apiKeysByProvider.google)) googleKeys = s.apiKeysByProvider.google;
+                    if (Array.isArray(s.apiKeysByProvider.fal)) falKeys = s.apiKeysByProvider.fal;
                 }
                 apiKeyManagers.google.setKeys(googleKeys);
-                setApiKeyInputs(apiKeyManagers.google.keys);
-                updateProviderUi();
+                apiKeyManagers.fal.setKeys(falKeys);
+
+                const savedFalModel = typeof s.falModel === "string" ? s.falModel : "default";
+                falModel = savedFalModel === "qwen-image" ? "qwen-image" : "default";
+                if (falModelSelect) falModelSelect.value = falModel;
+
+                const provider = normalizeProvider(s.provider || "google");
+                setActiveProvider(provider, { skipSave: true, skipKeyPersist: true });
                 settingsApplied = true;
                 if (s.prompt) promptInput.value = s.prompt;
                 if (s.resolution) resolutionSelect.value = s.resolution;
@@ -2128,13 +2370,13 @@
             } catch(e) { console.error("Failed to load settings", e); }
             if (!settingsApplied) {
                 apiKeyManagers.google.setKeys([]);
-                setApiKeyInputs([]);
-                updateProviderUi();
+                apiKeyManagers.fal.setKeys([]);
+                setActiveProvider("google", { skipSave: true, skipKeyPersist: true });
             }
         } else {
             apiKeyManagers.google.setKeys([]);
-            setApiKeyInputs([]);
-            updateProviderUi();
+            apiKeyManagers.fal.setKeys([]);
+            setActiveProvider("google", { skipSave: true, skipKeyPersist: true });
         }
     }
 
@@ -2674,6 +2916,7 @@
                 if (card) fragment.appendChild(card);
             });
             resultsEl.appendChild(fragment);
+            applyCompareSelectionIndicators();
 
             updatePaginationControls(activeListId, pageIndex, totalPages);
             updateMoveAllControl();
@@ -3091,6 +3334,10 @@
     const importCancelBtn = document.getElementById("importCancelBtn");
     const importPreviewImg = document.getElementById("importPreview");
     const importFilenameEl = document.getElementById("importFilename");
+    const providerSelect = document.getElementById("providerSelect");
+    const falModelGroup = document.getElementById("falModelGroup");
+    const falModelSelect = document.getElementById("falModelSelect");
+    const providerHintEl = document.getElementById("providerHint");
     const apiKeyLabelEl = document.getElementById("apiKeyLabel");
     const apiKeyProviderHintEl = document.getElementById("apiKeyProviderHint");
     const apiKeyListEl = document.getElementById("apiKeyList");
@@ -3126,11 +3373,28 @@
             keyPlaceholder: "ENTER_GOOGLE_KEY_HERE",
             keyUrl: "https://aistudio.google.com/app/apikey",
             endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent",
+            providerHint: "",
+            disableResolution: false,
+            disableAspectRatio: false,
             resourceBase: "https://generativelanguage.googleapis.com"
+        },
+        fal: {
+            id: "fal",
+            label: "Fal AI",
+            keyLabel: "FAL API KEY",
+            keyHint: "Fal AI API keys.",
+            keyPlaceholder: "ENTER_FAL_KEY_HERE",
+            keyUrl: "https://fal.ai/dashboard/keys",
+            endpoint: "https://fal.run/fal-ai/z-image/turbo",
+            i2iEndpoint: "https://fal.run/fal-ai/z-image/turbo/image-to-image",
+            providerHint: "Fal AI uses Z-Image Turbo. Supports Text-to-Image and Image-to-Image (if reference image provided).",
+            disableResolution: false,
+            disableAspectRatio: false
         }
     };
 
-    const activeProvider = DEFAULT_PROVIDER;
+    let activeProvider = "google";
+    let falModel = "default";
 
     function createKeyManager() {
         return {
@@ -3156,15 +3420,36 @@
     }
 
     const apiKeyManagers = {
-        google: createKeyManager()
+        google: createKeyManager(),
+        fal: createKeyManager()
     };
 
-    function getProviderConfig() {
-        return PROVIDER_CONFIGS.google;
+    function normalizeProvider(value) {
+        const normalized = (value || "").toString().toLowerCase();
+        if (normalized === "fal" || normalized === "fal-ai") return "fal";
+        return "google";
     }
 
-    function getApiKeyManager() {
-        return apiKeyManagers.google;
+    function getProviderConfig(provider = activeProvider) {
+        const normalized = normalizeProvider(provider);
+        const baseConfig = PROVIDER_CONFIGS[normalized] || PROVIDER_CONFIGS.google;
+        
+        if (normalized === "fal") {
+             if (falModel === "qwen-image") {
+                 return {
+                     ...baseConfig,
+                     endpoint: "https://fal.run/fal-ai/qwen-image-2512",
+                     i2iEndpoint: "https://fal.run/fal-ai/qwen-image-edit-2511"
+                 };
+             }
+        }
+        
+        return baseConfig;
+    }
+
+    function getApiKeyManager(provider = activeProvider) {
+        const normalized = normalizeProvider(provider);
+        return apiKeyManagers[normalized] || apiKeyManagers.google;
     }
 
     function getApiKeyValues() {
@@ -3236,20 +3521,48 @@
         });
     }
 
+    function setActiveProvider(provider, options = {}) {
+        const nextProvider = normalizeProvider(provider);
+        if (activeProvider !== nextProvider) {
+            if (!options.skipKeyPersist) {
+                getApiKeyManager(activeProvider).setKeys(getApiKeyValues());
+            }
+            activeProvider = nextProvider;
+        }
+        if (providerSelect) providerSelect.value = activeProvider;
+        setApiKeyInputs(getApiKeyManager(activeProvider).keys);
+        updateProviderUi();
+        if (!options.skipSave) saveSettings();
+    }
+
     function updateProviderUi() {
         const config = getProviderConfig();
+        const normalized = normalizeProvider(activeProvider);
+        if (falModelGroup) {
+            falModelGroup.style.display = normalized === "fal" ? "block" : "none";
+        }
+        if (falModelSelect && normalized === "fal") {
+            falModelSelect.value = falModel;
+        }
         if (apiKeyLabelEl) apiKeyLabelEl.textContent = config.keyLabel;
         if (apiKeyProviderHintEl) {
             apiKeyProviderHintEl.textContent = config.keyHint || "";
             apiKeyProviderHintEl.style.display = config.keyHint ? "block" : "none";
         }
+        if (providerHintEl) {
+            const hint = config.providerHint || "";
+            providerHintEl.textContent = hint;
+            providerHintEl.style.display = hint ? "block" : "none";
+        }
         if (resolutionSelect) {
-            resolutionSelect.disabled = false;
-            resolutionSelect.title = "";
+            const disableResolution = !!config.disableResolution;
+            resolutionSelect.disabled = disableResolution;
+            resolutionSelect.title = disableResolution ? "Ignored for this provider" : "";
         }
         if (aspectRatioSelect) {
-            aspectRatioSelect.disabled = false;
-            aspectRatioSelect.title = "";
+            const disableAspectRatio = !!config.disableAspectRatio;
+            aspectRatioSelect.disabled = disableAspectRatio;
+            aspectRatioSelect.title = disableAspectRatio ? "Ignored for this provider" : "";
         }
         if (getKeyBtn) {
             if (config.keyUrl) {
@@ -3976,6 +4289,19 @@
         el.addEventListener('input', saveSettings);
         el.addEventListener('change', saveSettings);
     });
+    if (providerSelect) {
+        providerSelect.addEventListener("change", () => {
+            setActiveProvider(providerSelect.value);
+        });
+    }
+    if (falModelSelect) {
+        falModelSelect.addEventListener("change", () => {
+            falModel = falModelSelect.value || "default";
+            if (activeProvider === "fal") updateProviderUi();
+            saveSettings();
+        });
+    }
+
     addApiKeyBtn.addEventListener("click", () => {
         apiKeyListEl.appendChild(createApiKeyRow());
     });
@@ -4001,10 +4327,20 @@
         showFolderOverlay("Please choose a new output directory");
     });
     if (importBtn && importInput) {
-        importBtn.addEventListener("click", () => importInput.click());
+        importBtn.addEventListener("click", (e) => {
+            importBatchMode = !!e.metaKey;
+            importInput.click();
+        });
         importInput.addEventListener("change", (e) => {
             const files = Array.from(e.target.files || []);
-            if (files.length) handleManualImageImport(files);
+            if (files.length) {
+                if (importBatchMode) {
+                    handleBatchImageImport(files);
+                } else {
+                    handleManualImageImport(files);
+                }
+            }
+            importBatchMode = false;
             importInput.value = "";
         });
     }
@@ -4059,6 +4395,39 @@
     const lbStatAfter = document.getElementById("lbStatAfter");
     const lbStatSaved = document.getElementById("lbStatSaved");
 
+    const lightboxUpscaleTools = document.getElementById("lightboxUpscaleTools");
+    
+    const lightboxEditTools = document.getElementById("lightboxEditTools");
+    const lbEditCanvas = document.getElementById("lbEditCanvas");
+    const lbCropOverlay = document.getElementById("lbCropOverlay");
+    const lbMaskCanvas = document.getElementById("lbMaskCanvas");
+    const lbMaskTools = document.getElementById("lbMaskTools");
+    const lbEditStatus = document.getElementById("lbEditStatus");
+    const lbCropToggleBtn = document.getElementById("lbCropToggleBtn");
+    const lbRotateBtn = document.getElementById("lbRotateBtn");
+    const lbPaintToggleBtn = document.getElementById("lbPaintToggleBtn");
+    const lbClearMaskBtn = document.getElementById("lbClearMaskBtn");
+    const lbBrushSize = document.getElementById("lbBrushSize");
+    const lbBrightness = document.getElementById("lbBrightness");
+    const lbContrast = document.getElementById("lbContrast");
+    const lbSaturation = document.getElementById("lbSaturation");
+    const lbGrayscale = document.getElementById("lbGrayscale");
+    const lbEditSaveNewBtn = document.getElementById("lbEditSaveNewBtn");
+    const lbEditSaveReplaceBtn = document.getElementById("lbEditSaveReplaceBtn");
+    const lbEditExitBtn = document.getElementById("lbEditExitBtn");
+    const lbAdjustControls = document.getElementById("lbAdjustControls");
+    const lbInpaintControls = document.getElementById("lbInpaintControls");
+    const lbInpaintPrompt = document.getElementById("lbInpaintPrompt");
+    const lbInpaintSubmitBtn = document.getElementById("lbInpaintSubmitBtn");
+    const lbUpscalePreview = document.getElementById("lbUpscalePreview");
+    const lbUpscaleFactor = document.getElementById("lbUpscaleFactor");
+    const lbUpscaleNoise = document.getElementById("lbUpscaleNoise");
+    const lbUpscaleNoiseNum = document.getElementById("lbUpscaleNoiseNum");
+    const lbUpscaleSubmitBtn = document.getElementById("lbUpscaleSubmitBtn");
+    const lbUpscaleExitBtn = document.getElementById("lbUpscaleExitBtn");
+    const lbUpscaleOriginSize = document.getElementById("lbUpscaleOriginSize");
+    const lbUpscaleTargetSize = document.getElementById("lbUpscaleTargetSize");
+    const lbUpscaleCost = document.getElementById("lbUpscaleCost");
     const compareSelectHintEl = document.getElementById("compareSelectHint");
     const compareOverlay = document.getElementById("compareOverlay");
     const compareViewEl = document.getElementById("compareView");
@@ -4267,6 +4636,17 @@
     }
 
     /* --- Lightbox Logic (Same as before) --- */
+    const lbUpscaleState = { active: false, factor: 2 };
+    const lbEditState = {
+        active: false,
+        img: null,
+        canvas: null,
+        ctx: null,
+        adjust: { brightness: 100, contrast: 100, saturation: 100, grayscale: 0, rotation: 0 },
+        crop: { active: false, rect: null, dragging: null, dragStart: {x:0,y:0} },
+        paint: { active: false, drawing: false, lastPos: null },
+        view: { scale: 1, x: 0, y: 0, isDragging: false, dragStart: {x:0, y:0} } // Viewport transform
+    };
     const lbCompressState = {
         active: false,
         taskId: null,
@@ -4301,6 +4681,7 @@
     let lastCursorX = window.innerWidth / 2;
     let lastCursorY = window.innerHeight / 2;
     const compareModeState = { active: false, selections: [], pickOrder: [], overlayVisible: false };
+    const editSelectionModeState = { active: false };
     const compareViewState = { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0, initialX: 0, initialY: 0, split: 50 };
 
     function estimateBase64Bytes(base64 = "") {
@@ -4502,7 +4883,7 @@
         if (lbQualityHint) lbQualityHint.textContent = "Q95";
         if (lbSizeInfo) lbSizeInfo.textContent = "";
         if (lbSourceInfo) lbSourceInfo.textContent = "";
-        setCompressionStatus("Waiting to Load");
+        setCompressionStatus("Pending");
     }
 
     function compareOverlayVisible() {
@@ -4523,6 +4904,19 @@
     function clearCompareSelectionIndicators() {
         document.querySelectorAll(".result-card.compare-select-picked").forEach((card) => {
             card.classList.remove("compare-select-picked");
+        });
+    }
+
+    function applyCompareSelectionIndicators() {
+        if (!compareModeState.active || !resultsEl) return;
+        const selectedIds = new Set(compareModeState.selections || []);
+        resultsEl.querySelectorAll(".result-card").forEach((card) => {
+            const taskId = card.dataset.taskId;
+            if (taskId && selectedIds.has(taskId)) {
+                card.classList.add("compare-select-picked");
+            } else {
+                card.classList.remove("compare-select-picked");
+            }
         });
     }
 
@@ -4594,6 +4988,139 @@
             setTimeout(() => openCompareOverlayForTasks(pair).catch(console.error), 60);
         }
         return true;
+    }
+
+    /* --- Edit Selection Mode Logic --- */
+    function updateEditSelectionHint() {
+        if (!compareSelectHintEl) return;
+        if (!editSelectionModeState.active) {
+            // Only clear if not in compare mode (though they should be exclusive)
+            if (!compareModeState.active) compareSelectHintEl.classList.remove("visible");
+            return;
+        }
+        compareSelectHintEl.textContent = `Edit mode: Select a task to edit · Esc/E to exit`;
+        compareSelectHintEl.classList.add("visible");
+    }
+
+    function enterEditSelectionMode() {
+        if (compareOverlayVisible()) return;
+        if (compareModeState.active) return;
+        if (editSelectionModeState.active) {
+            updateEditSelectionHint();
+            return;
+        }
+        editSelectionModeState.active = true;
+        // Reuse the compare-select-mode class for cursor/visuals
+        if (document.body) document.body.classList.add("compare-select-mode");
+        updateEditSelectionHint();
+    }
+
+    function exitEditSelectionMode() {
+        if (!editSelectionModeState.active) return;
+        editSelectionModeState.active = false;
+        if (document.body) document.body.classList.remove("compare-select-mode");
+        if (compareSelectHintEl) compareSelectHintEl.classList.remove("visible");
+    }
+
+    function handleEditCardSelection(taskId, event) {
+        if (!editSelectionModeState.active || !taskId) return false;
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        exitEditSelectionMode();
+        // Slight delay to allow UI to update
+        setTimeout(() => editTaskMetadata(taskId).catch(console.error), 10);
+        return true;
+    }
+
+    async function editTaskMetadata(taskId) {
+        let record = resultsData.get(taskId);
+        
+        // Robustness: Try to fetch from DB if not in memory or incomplete
+        if (!record) {
+             try {
+                const stored = await fetchStoredResultRecord(taskId);
+                if (stored) {
+                    record = rememberResultRecord(taskId, {
+                        meta: stored.meta || {},
+                        prompt: stored.prompt || "",
+                        listId: stored.listId || MAIN_LIST_ID,
+                        timestamp: stored.timestamp || Date.now(),
+                        refImageIds: Array.isArray(stored.refImageIds) ? stored.refImageIds : []
+                    });
+                }
+             } catch (err) {
+                 console.warn("Failed to restore record for editing", err);
+             }
+        }
+        
+        if (!record) return;
+
+        let previewUrl = null;
+        try {
+            if (record.objectUrl) {
+                previewUrl = record.objectUrl;
+            } else {
+                // Explicitly fetch thumbnail because it's typically stripped from resultsData to save memory
+                const thumbFromDb = await fetchStoredThumbnail(taskId);
+                if (thumbFromDb) {
+                    if (typeof thumbFromDb === 'string' && thumbFromDb.trim().startsWith("data:")) {
+                        previewUrl = thumbFromDb;
+                    } else {
+                        previewUrl = "data:image/png;base64," + thumbFromDb;
+                    }
+                } else if (record.base64) {
+                    const mime = record.meta?.mimeType || "image/png";
+                    previewUrl = `data:${mime};base64,${record.base64}`;
+                }
+            }
+        } catch (err) {
+             console.warn("Error resolving preview image", err);
+        }
+
+        const currentMeta = record.meta || {};
+        const defaults = {
+            prompt: record.prompt || "",
+            resolution: currentMeta.resolution || "",
+            aspectRatio: currentMeta.aspectRatio || ""
+        };
+
+        try {
+            const dialogResult = await openImportDialog({
+                fileName: "Edit Task Metadata",
+                confirmText: "Save",
+                previewUrl,
+                defaults
+            });
+
+            if (dialogResult) {
+                record.prompt = dialogResult.prompt;
+                if (!record.meta) record.meta = {};
+                record.meta.resolution = dialogResult.resolution;
+                record.meta.aspectRatio = dialogResult.aspectRatio;
+
+                // Persist to DB
+                await updateStoredResult(taskId, {
+                    prompt: record.prompt,
+                    meta: record.meta
+                });
+
+                // Persist to Disk
+                await persistResultMetadataSnapshot(taskId, record);
+
+                // Trigger UI Refresh
+                renderActivePage({ reason: "metadata-update" });
+            }
+        } catch (err) {
+            console.error("Edit metadata failed", err);
+            if (importOverlayEl) {
+                importOverlayEl.classList.add("hidden");
+                importOverlayEl.setAttribute("aria-hidden", "true");
+            }
+            resetImportDialogFields();
+        }
     }
 
     function pointerXToCompareSplit(clientX) {
@@ -4721,7 +5248,7 @@
         try {
             const [left, right] = await Promise.all(taskIds.slice(0, 2).map(id => prepareCompareImagePayload(id)));
             if (!left || !right) {
-                setTemporaryErrorStatus("Unable to load comparison images");
+                setTemporaryErrorStatus("Unable to load comparison image.");
                 compareModeState.overlayVisible = false;
                 return;
             }
@@ -4742,7 +5269,7 @@
             compareModeState.overlayVisible = true;
         } catch (err) {
             console.error("Compare overlay init failed", err);
-            setTemporaryErrorStatus(err?.message || "Compare mode failed to load");
+            setTemporaryErrorStatus(err?.message || "Failed to load compare mode.");
             compareModeState.overlayVisible = false;
         }
     }
@@ -4761,6 +5288,983 @@
             delete compareImgRight.dataset.taskId;
         }
         resetCompareZoom();
+    }
+
+    function updateUpscaleInfo() {
+        if (!lightboxImage || !lbUpscaleFactor) return;
+        const w = lightboxImage.naturalWidth || 0;
+        const h = lightboxImage.naturalHeight || 0;
+        const factor = parseFloat(lbUpscaleFactor.value) || 2;
+        
+        if (lbUpscaleOriginSize) {
+            const mp = (w * h / 1000000).toFixed(2);
+            lbUpscaleOriginSize.textContent = `${w} × ${h} (${mp} MP)`;
+        }
+        
+        const tw = Math.round(w * factor);
+        const th = Math.round(h * factor);
+        
+        if (lbUpscaleTargetSize) {
+             const mp = (tw * th / 1000000).toFixed(2);
+             lbUpscaleTargetSize.textContent = `${tw} × ${th} (${mp} MP)`;
+        }
+        
+        if (lbUpscaleCost) {
+            const totalPixels = tw * th;
+            const cost = (totalPixels / 1000000 * 0.001).toFixed(4);
+            lbUpscaleCost.textContent = `$${cost}`;
+        }
+    }
+
+    function enterUpscaleMode() {
+        if (!lightbox.classList.contains("visible")) return;
+        if (lbCompressState.active) resetCompressionMode();
+
+        lbUpscaleState.active = true;
+        if (lightboxUpscaleTools) lightboxUpscaleTools.classList.add("active");
+        
+        // Setup preview
+        const currentSrc = lightboxImage.src;
+        if (lbUpscalePreview) lbUpscalePreview.src = currentSrc;
+        
+        // Reset inputs
+        if (lbUpscaleFactor) lbUpscaleFactor.value = "2";
+        if (lbUpscaleNoise) lbUpscaleNoise.value = "0.1";
+        if (lbUpscaleNoiseNum) lbUpscaleNoiseNum.value = "0.1";
+        lbUpscaleState.factor = 2;
+        
+        updateUpscaleInfo();
+
+        if (lbUpscaleSubmitBtn) lbUpscaleSubmitBtn.disabled = false;
+    }
+
+    function exitUpscaleMode() {
+        lbUpscaleState.active = false;
+        if (lightboxUpscaleTools) lightboxUpscaleTools.classList.remove("active");
+        if (lbUpscalePreview) lbUpscalePreview.src = "";
+    }
+
+    async function submitUpscaleTask() {
+        if (!lbUpscaleState.active) return;
+        
+        const factor = parseFloat(lbUpscaleFactor.value) || 2;
+        const noiseVal = lbUpscaleNoise ? parseFloat(lbUpscaleNoise.value) : 0.1;
+        const noise = isNaN(noiseVal) ? 0.1 : Math.max(0, Math.min(1, noiseVal));
+
+        if (factor < 1 || factor > 10) {
+            alert("Upscale factor must be between 1 and 10.");
+            return;
+        }
+
+        const currentSrc = lightboxImage.src;
+        if (!currentSrc) return;
+
+        // 0. Grab original prompt/meta before closing everything
+        let originalPrompt = "";
+        let originalMeta = {};
+        if (lightboxImage.dataset.taskId) {
+           try {
+             // Try to fetch synchronously from memory first if possible, otherwise DB
+             const tid = lightboxImage.dataset.taskId;
+             if (typeof resultsData !== "undefined" && resultsData.has(tid)) {
+                 const m = resultsData.get(tid);
+                 if (m.prompt) originalPrompt = m.prompt;
+                 if (m.meta) originalMeta = m.meta;
+             }
+             
+             // Always try DB for full record to be safe
+             const db = await openDB();
+             const tx = db.transaction(STORE_RESULTS, "readonly");
+             const rec = await getRequestAsync(tx.objectStore(STORE_RESULTS), tid);
+             if (rec) {
+                 originalPrompt = rec.prompt || originalPrompt;
+                 originalMeta = rec.metadata || originalMeta;
+             }
+           } catch(e) { console.warn("Upscale inheritance fetch failed", e); }
+        }
+
+        // Immediate UI feedback
+        if (typeof setTemporaryStatus === "function") setTemporaryStatus("Upscale task added to queue...");
+        
+        // Exit Modes
+        exitUpscaleMode(); 
+        closeLightbox();
+
+        // Create Task
+        const newTaskId = `task_${Date.now()}_seedvr_upscale`;
+        // Create skeleton immediately
+        createSkeletonCard(newTaskId, { listId: MAIN_LIST_ID });
+        updateSkeletonStatus(newTaskId, "PREPARING UPLOAD...", "QUEUED");
+
+        // Run background task
+        handleBackgroundUpscale(currentSrc, factor, newTaskId, originalPrompt, originalMeta, noise).catch(err => {
+            console.error("Background upscale error:", err);
+            setTemporaryErrorStatus("Upscale failed: " + err.message);
+            // Optionally remove the skeleton if it failed completely
+            removeTaskIndexEntry(newTaskId);
+            renderActivePage({ reason: "upscale-fail" });
+        });
+    }
+
+    /* --- Edit Mode Implementation --- */
+    
+    // Select Edit Variables
+    let lbEditWrapper, lbEditContainerRef;
+
+    async function enterEditMode() {
+        if (!lightbox.classList.contains("visible")) return;
+        if (lbCompressState.active) resetCompressionMode();
+        if (lbUpscaleState.active) exitUpscaleMode();
+
+        lbEditState.active = true;
+        if (lightboxEditTools) lightboxEditTools.classList.add("active");
+        
+        lbEditWrapper = document.getElementById("lbEditWrapper");
+        lbEditContainerRef = document.getElementById("lbEditContainer");
+
+        // Load image
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            lbEditState.img = img;
+            
+            // Reset State
+            lbEditState.adjust = { brightness: 100, contrast: 100, saturation: 100, grayscale: 0, rotation: 0 };
+            lbEditState.crop = { active: false, rect: null, dragging: null, dragStart: {x:0, y:0} };
+            lbEditState.paint = { active: false, drawing: false, lastPos: null };
+            lbEditState.view = { scale: 1, x: 0, y: 0, isDragging: false, dragStart: {x:0,y:0} };
+            
+            // Reset UI
+            [lbBrightness, lbContrast, lbSaturation].forEach(el => el.value = 100);
+            lbGrayscale.value = 0;
+            if(lbInpaintPrompt) lbInpaintPrompt.value = "";
+            lbAdjustControls.style.display = "block";
+            lbInpaintControls.style.display = "none";
+            lbMaskCanvas.style.display = "none";
+            // lbMaskTools.style.display = "none"; // Removed from DOM
+            lbCropOverlay.style.display = "none";
+            
+            if(lbEditStatus) lbEditStatus.innerText = "Ready";
+            
+            updateEditCanvas();
+            updateEditViewTransform();
+        };
+        img.src = lightboxImage.src;
+    }
+
+    function exitEditMode() {
+        lbEditState.active = false;
+        if (lightboxEditTools) lightboxEditTools.classList.remove("active");
+        // Hide overlays
+        if (lbCropOverlay) lbCropOverlay.style.display = "none";
+        if (lbMaskCanvas) lbMaskCanvas.style.display = "none";
+        // if (lbMaskTools) lbMaskTools.style.display = "none";
+    }
+
+    function updateEditCanvas() {
+        if (!lbEditState.img || !lbEditCanvas) return;
+        
+        // Sync state from DOM
+        lbEditState.adjust.brightness = lbBrightness.value;
+        lbEditState.adjust.contrast = lbContrast.value;
+        lbEditState.adjust.saturation = lbSaturation.value;
+        lbEditState.adjust.grayscale = lbGrayscale.value;
+
+        const img = lbEditState.img;
+        const rot = lbEditState.adjust.rotation % 360;
+        const isVertical = (rot === 90 || rot === 270 || rot === -90 || rot === -270);
+        
+        // Logical dimensions (image size after rotation)
+        const logicalW = isVertical ? img.height : img.width;
+        const logicalH = isVertical ? img.width : img.height;
+        
+        // Fit within container
+        const contW = lbEditContainerRef.clientWidth;
+        const contH = lbEditContainerRef.clientHeight;
+        const scale = Math.min(contW / logicalW, contH / logicalH);
+        
+        const displayW = Math.floor(logicalW * scale);
+        const displayH = Math.floor(logicalH * scale);
+        
+        // Update Wrapper size
+        lbEditWrapper.style.width = displayW + "px";
+        lbEditWrapper.style.height = displayH + "px";
+        
+        // Set Canvas internal size to logical resolution
+        lbEditCanvas.width = logicalW;
+        lbEditCanvas.height = logicalH;
+
+        // Force CSS scaling to fit wrapper
+        lbEditCanvas.style.width = "100%";
+        lbEditCanvas.style.height = "100%";
+        
+        const ctx = lbEditCanvas.getContext('2d');
+        ctx.save();
+        
+            // Apply Filters
+            ctx.filter = `brightness(${lbEditState.adjust.brightness}%) contrast(${lbEditState.adjust.contrast}%) saturate(${lbEditState.adjust.saturation}%) grayscale(${lbEditState.adjust.grayscale}%)`;
+            
+            // Apply Rotation
+            ctx.translate(logicalW / 2, logicalH / 2);
+            ctx.rotate(rot * Math.PI / 180);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+            
+            ctx.restore();
+
+            // *** IMPORTANT: The filter property is part of the state, but `toDataURL` usually ignores it on some browsers if not baked in properly. 
+            // However, drawImage respects it. But for the FINAL output, we create a new canvas. 
+            // The `saveEditResult` function uses `ctx.drawImage(srcCanvas, ...)` so it copies the PIXELS of the source canvas.
+            // If the source canvas has the filter applied actively, the pixel data in `toDataURL` might NOT contain the filter if it's just a view filter (CSS).
+            // BUT wait, we are using `lbEditCanvas.getContext('2d').filter = ...`. This IS a canvas filter.
+            // So drawImage applies it to the context. It should be baked into the canvas PIXELS.
+            // The issue might be that we need to wait for the filter to apply? No, it's synchronous.
+            // Wait, for `saveEditResult`, we create a NEW canvas and draw `srcCanvas` onto it. 
+            // Does `drawImage(canvas, ...)` draw the filtered state? Yes, it *should*.
+            
+            lbEditState.scale = scale;
+        
+        // Re-scale mask if it exists? 
+        // For simplicity, we clear mask on geometry change to avoid misalignment
+        if (lbMaskCanvas.width !== logicalW || lbMaskCanvas.height !== logicalH) {
+             lbMaskCanvas.width = logicalW;
+             lbMaskCanvas.height = logicalH;
+             // clear mask context
+             const mCtx = lbMaskCanvas.getContext('2d');
+             mCtx.clearRect(0, 0, logicalW, logicalH);
+        }
+        
+        // Update Crop UI if active
+        if (lbEditState.crop.active) updateCropUI();
+    }
+
+    [lbBrightness, lbContrast, lbSaturation, lbGrayscale].forEach(el => {
+        el.addEventListener('input', updateEditCanvas);
+    });
+
+    const lbAdjustResetBtn = document.getElementById("lbAdjustResetBtn");
+    if (lbAdjustResetBtn) {
+        lbAdjustResetBtn.addEventListener('click', () => {
+            if(!lbEditState.active) return;
+            lbBrightness.value = 100;
+            lbContrast.value = 100;
+            lbSaturation.value = 100;
+            lbGrayscale.value = 0;
+            updateEditCanvas();
+        });
+    }
+
+    // View / Zoom / Pan Logic
+    function updateEditViewTransform() {
+        if (!lbEditWrapper) return;
+        const { scale, x, y } = lbEditState.view;
+        lbEditWrapper.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    }
+
+    function adjustEditZoom(delta) {
+        if (!lbEditState.active) return;
+        const oldScale = lbEditState.view.scale;
+        let newScale = oldScale + delta;
+        newScale = Math.min(20, Math.max(0.1, newScale));
+        
+        if (Math.abs(newScale - oldScale) < 0.001) return;
+        
+        const rect = document.getElementById("lbEditContainer").getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        // Use global cursor track if available
+        const relX = lastCursorX - rect.left;
+        const relY = lastCursorY - rect.top;
+        const useMouse = (relX >= 0 && relX <= rect.width && relY >= 0 && relY <= rect.height);
+        
+        const pivotX = useMouse ? relX - centerX : 0;
+        const pivotY = useMouse ? relY - centerY : 0;
+        
+        const ratio = newScale / oldScale;
+        
+        lbEditState.view.x = pivotX - (pivotX - lbEditState.view.x) * ratio;
+        lbEditState.view.y = pivotY - (pivotY - lbEditState.view.y) * ratio;
+        lbEditState.view.scale = newScale;
+        
+        updateEditViewTransform();
+    }
+
+    function resetEditZoom() {
+        if (!lbEditState.active) return;
+        lbEditState.view.scale = 1;
+        lbEditState.view.x = 0;
+        lbEditState.view.y = 0;
+        updateEditViewTransform();
+    }
+
+    const lbEditContainerEl = document.getElementById("lbEditContainer");
+    if (lbEditContainerEl) {
+        lbEditContainerEl.addEventListener("wheel", (e) => {
+            if (!lbEditState.active) return;
+            // Disable wheel zoom in Paint Mode to prevent accidental zooming while drawing
+            // User can still use Z/X/C keys
+            if (lbEditState.paint.active) return;
+            
+            e.preventDefault();
+            e.stopPropagation(); 
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            adjustEditZoom(delta);
+        }, { passive: false });
+
+        lbEditContainerEl.addEventListener("click", (e) => {
+            if (!lbEditState.active) return;
+            e.stopPropagation();
+            
+            // Disable click-to-zoom in Paint Mode
+            if (lbEditState.paint.active) return;
+
+            if (lbEditState.view.hasMoved) return; // Ignore if it was a drag
+
+            // Check if tool handles or specific canvases are target to avoid zoom on interactions
+            const target = e.target;
+            const isCropHandle = target.classList.contains('crop-handle');
+            const isCropOverlay = (target.id === 'lbCropOverlay' || target.closest('#lbCropOverlay'));
+            const isPaint = (lbEditState.paint.active && target.id === 'lbMaskCanvas');
+            if (isCropHandle || (lbEditState.crop.active && isCropOverlay) || isPaint) return;
+
+            // Toggle Zoom
+            if (lbEditState.view.scale === 1) {
+                 // Zoom In to 2.5x
+                  const rect = lbEditContainerEl.getBoundingClientRect();
+                  const centerX = rect.width / 2;
+                  const centerY = rect.height / 2;
+                  const relX = e.clientX - rect.left;
+                  const relY = e.clientY - rect.top;
+                  const pivotX = relX - centerX;
+                  const pivotY = relY - centerY;
+                  
+                  const targetScale = 2.5;
+                  const ratio = targetScale / 1;
+                  
+                  lbEditState.view.x = pivotX - (pivotX - 0) * ratio;
+                  lbEditState.view.y = pivotY - (pivotY - 0) * ratio;
+                  lbEditState.view.scale = targetScale;
+            } else {
+                 resetEditZoom();
+            }
+            updateEditViewTransform();
+        });
+
+        lbEditContainerEl.addEventListener("mousedown", (e) => {
+            if (!lbEditState.active) return;
+            e.stopPropagation();
+            // Check if tool handles or specific canvases are target
+            const target = e.target;
+            const isCropHandle = target.classList.contains('crop-handle');
+            // Check if clicking existing crop overlay (to move it)
+            const isCropOverlay = (target.id === 'lbCropOverlay' || target.closest('#lbCropOverlay'));
+            // Check if clicking mask canvas in paint mode
+            const isPaint = (lbEditState.paint.active && target.id === 'lbMaskCanvas');
+
+            // If we are on a control/tool, don't pan
+            if (isCropHandle || (lbEditState.crop.active && isCropOverlay) || isPaint) return;
+            
+            // Start Pan
+            lbEditState.view.isDragging = true;
+            lbEditState.view.hasMoved = false;
+            lbEditState.view.dragStart = { x: e.clientX, y: e.clientY };
+            lbEditState.view.initialX = lbEditState.view.x;
+            lbEditState.view.initialY = lbEditState.view.y;
+            e.preventDefault();
+        });
+
+        window.addEventListener("mousemove", (e) => {
+            if (lbEditState.view && lbEditState.view.isDragging) {
+                const dx = e.clientX - lbEditState.view.dragStart.x;
+                const dy = e.clientY - lbEditState.view.dragStart.y;
+                
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) lbEditState.view.hasMoved = true;
+                
+                lbEditState.view.x = lbEditState.view.initialX + dx;
+                lbEditState.view.y = lbEditState.view.initialY + dy;
+                updateEditViewTransform();
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+             if (lbEditState.view) {
+                 lbEditState.view.isDragging = false;
+                 // Don't clear hasMoved here, we need it for click
+             }
+        });
+    }
+    
+    lbRotateBtn.addEventListener('click', () => {
+        lbEditState.adjust.rotation += 90;
+        updateEditCanvas();
+        if (lbEditState.crop.active) toggleCropMode(); 
+        if (lbEditState.paint.active) {
+            const mCtx = lbMaskCanvas.getContext('2d');
+            mCtx.clearRect(0,0,lbMaskCanvas.width, lbMaskCanvas.height);
+        }
+    });
+
+    if (lbUpscaleNoise && lbUpscaleNoiseNum) {
+        lbUpscaleNoise.addEventListener('input', () => lbUpscaleNoiseNum.value = lbUpscaleNoise.value);
+        lbUpscaleNoiseNum.addEventListener('input', () => lbUpscaleNoise.value = lbUpscaleNoiseNum.value);
+    }
+
+    lbCropToggleBtn.addEventListener('click', toggleCropMode);
+    lbPaintToggleBtn.addEventListener('click', togglePaintMode);
+    lbEditExitBtn.addEventListener('click', exitEditMode);
+    lbEditSaveNewBtn.addEventListener('click', () => saveEditResult(false));
+    lbEditSaveReplaceBtn.addEventListener('click', (e) => {
+        // Checking for Cmd key bypass happens inside saveEditResult logic or here
+        // The user requirement: "click needs confirmation, but hold cmd click overwrite without confirmation"
+        const noConfirm = (e.metaKey || e.ctrlKey);
+        saveEditResult(true, noConfirm);
+    });
+    lbClearMaskBtn.addEventListener('click', () => {
+        const mCtx = lbMaskCanvas.getContext('2d');
+        mCtx.clearRect(0,0,lbMaskCanvas.width, lbMaskCanvas.height);
+    });
+    
+    // Inpaint submit button
+    if (lbInpaintSubmitBtn) {
+        lbInpaintSubmitBtn.addEventListener('click', () => {
+             saveEditResult(false);
+        });
+    }
+
+    function toggleCropMode() {
+        if (!lbEditState.active) return;
+        lbEditState.crop.active = !lbEditState.crop.active;
+        if (lbEditState.paint.active && lbEditState.crop.active) togglePaintMode(); 
+        
+        if (lbEditState.crop.active) {
+            lbCropOverlay.style.display = "block";
+            lbEditState.crop.rect = { x: 0, y: 0, w: lbEditCanvas.width, h: lbEditCanvas.height };
+            updateCropUI();
+        } else {
+            lbCropOverlay.style.display = "none";
+        }
+    }
+    
+    function updateCropUI() {
+        if (!lbEditState.crop.active) return;
+        const rect = lbEditState.crop.rect;
+        const scale = lbEditState.scale || 1; 
+        
+        lbCropOverlay.style.left = (rect.x * scale) + "px";
+        lbCropOverlay.style.top = (rect.y * scale) + "px";
+        lbCropOverlay.style.width = (rect.w * scale) + "px";
+        lbCropOverlay.style.height = (rect.h * scale) + "px";
+    }
+    
+    function togglePaintMode() {
+        if (!lbEditState.active) return;
+        lbEditState.paint.active = !lbEditState.paint.active;
+        if (lbEditState.crop.active && lbEditState.paint.active) toggleCropMode();
+        
+        if (lbEditState.paint.active) {
+            lbMaskCanvas.style.display = "block";
+            // lbMaskTools.style.display = "flex"; // Moved to sidebar
+            lbAdjustControls.style.display = "none";
+            lbInpaintControls.style.display = "block";
+            updateInpaintCost(); // Calculate cost
+        } else {
+            lbMaskCanvas.style.display = "none";
+            // lbMaskTools.style.display = "none";
+            lbAdjustControls.style.display = "block";
+            lbInpaintControls.style.display = "none";
+        }
+    }
+
+    function updateInpaintCost() {
+        const costEl = document.getElementById("lbInpaintCost");
+        const resEl = document.getElementById("lbInpaintRes");
+        if (!costEl || !lbEditCanvas) return;
+        
+        // Calculate based on physical resolution being edited
+        const w = lbEditCanvas.width;
+        const h = lbEditCanvas.height;
+        const pixels = w * h;
+        const mp = pixels / 1000000;
+        const cost = mp * 0.05; // $0.05 per MP
+        
+        if (resEl) resEl.textContent = `${w} × ${h} (${mp.toFixed(2)} MP)`;
+        costEl.textContent = `$${cost.toFixed(4)}`; 
+    }
+
+    lbCropOverlay.addEventListener('mousedown', startCropDrag);
+    
+    function startCropDrag(e) {
+        if (!lbEditState.crop.active) return;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const handle = e.target.getAttribute('data-dir');
+        // Allow dragging if target is the overlay OR any child that isn't a handle (though handles are covered above)
+        // Check if the click is within the overlay box
+        if (e.target === lbCropOverlay || e.target.closest('#lbCropOverlay')) {
+             if (handle) {
+                 lbEditState.crop.dragging = handle;
+             } else {
+                 lbEditState.crop.dragging = 'move';
+             }
+        } else {
+             return; 
+        }
+        
+        lbEditState.crop.dragStart = { x: e.clientX, y: e.clientY };
+        lbEditState.crop.startRect = { ...lbEditState.crop.rect };
+        
+        window.addEventListener('mousemove', handleCropMove);
+        window.addEventListener('mouseup', endCropDrag);
+    }
+    
+    function handleCropMove(e) {
+        if (!lbEditState.crop.dragging) return;
+        
+        const viewScale = lbEditState.view ? (lbEditState.view.scale || 1) : 1;
+        const logicalScale = lbEditState.scale || 1;
+        const totalScale = viewScale * logicalScale;
+
+        const dx = (e.clientX - lbEditState.crop.dragStart.x) / totalScale;
+        const dy = (e.clientY - lbEditState.crop.dragStart.y) / totalScale;
+        
+        const rect = { ...lbEditState.crop.startRect };
+        const mode = lbEditState.crop.dragging;
+        const limitW = lbEditCanvas.width;
+        const limitH = lbEditCanvas.height;
+        
+        if (mode === 'move') {
+            rect.x += dx;
+            rect.y += dy;
+        } else {
+            if (mode.includes('w')) { rect.x += dx; rect.w -= dx; }
+            if (mode.includes('n')) { rect.y += dy; rect.h -= dy; }
+            if (mode.includes('e')) { rect.w += dx; }
+            if (mode.includes('s')) { rect.h += dy; }
+        }
+        
+        // Constraints
+        if (rect.w < 50) rect.w = 50;
+        if (rect.h < 50) rect.h = 50;
+        if (rect.x < 0) rect.x = 0;
+        if (rect.y < 0) rect.y = 0;
+        if (rect.x + rect.w > limitW) {
+             if (mode === 'move') rect.x = limitW - rect.w;
+             else rect.w = limitW - rect.x;
+        }
+        if (rect.y + rect.h > limitH) {
+             if (mode === 'move') rect.y = limitH - rect.h;
+             else rect.h = limitH - rect.y;
+        }
+        
+        lbEditState.crop.rect = rect;
+        updateCropUI();
+    }
+    
+    function endCropDrag() {
+        window.removeEventListener('mousemove', handleCropMove);
+        window.removeEventListener('mouseup', endCropDrag);
+        lbEditState.crop.dragging = null;
+    }
+
+    lbMaskCanvas.addEventListener('mousedown', startPaint);
+    
+    function startPaint(e) {
+        if (!lbEditState.paint.active) return;
+        lbEditState.paint.drawing = true;
+        const rect = lbMaskCanvas.getBoundingClientRect();
+        
+        const ratioX = lbMaskCanvas.width / rect.width;
+        const ratioY = lbMaskCanvas.height / rect.height;
+        
+        const x = (e.clientX - rect.left) * ratioX;
+        const y = (e.clientY - rect.top) * ratioY;
+        
+        const ctx = lbMaskCanvas.getContext('2d');
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.lineWidth = parseInt(lbBrushSize.value);
+        ctx.globalCompositeOperation = "source-over"; 
+        ctx.strokeStyle = "rgba(255, 255, 255, 1)";
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        lbEditState.paint.lastPos = {x, y};
+        
+        window.addEventListener('mousemove', handlePaintMove);
+        window.addEventListener('mouseup', endPaint);
+    }
+    
+    function handlePaintMove(e) {
+        if (!lbEditState.paint.drawing) return;
+        const rect = lbMaskCanvas.getBoundingClientRect();
+        
+        const ratioX = lbMaskCanvas.width / rect.width;
+        const ratioY = lbMaskCanvas.height / rect.height;
+        
+        const x = (e.clientX - rect.left) * ratioX;
+        const y = (e.clientY - rect.top) * ratioY;
+        
+        const ctx = lbMaskCanvas.getContext('2d');
+        ctx.lineWidth = parseInt(lbBrushSize.value);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        lbEditState.paint.lastPos = {x, y};
+    }
+    
+    function endPaint() {
+        lbEditState.paint.drawing = false;
+        window.removeEventListener('mousemove', handlePaintMove);
+        window.removeEventListener('mouseup', endPaint);
+    }
+
+    async function saveEditResult(isReplace, noConfirm = false) {
+        if (!lbEditState.active) return;
+        
+        if (lbEditState.paint.active) {
+            await submitInpaintTask(); // Always new card
+        } else {
+             if (isReplace && !noConfirm) {
+                 if (!confirm("Overwrite original image? Cannot be undone.")) return;
+             }
+            await submitLocalEdit(isReplace);
+        }
+    }
+
+    async function submitLocalEdit(isReplace) {
+        if(lbEditSaveNewBtn) lbEditSaveNewBtn.disabled = true;
+        if(lbEditSaveReplaceBtn) lbEditSaveReplaceBtn.disabled = true;
+        lbEditStatus.innerText = "Saving...";
+
+        try {
+            const canvas = document.createElement('canvas');
+            const srcCanvas = lbEditCanvas;
+            
+            let targetX = 0, targetY = 0, targetW = srcCanvas.width, targetH = srcCanvas.height;
+            if (lbEditState.crop.active && lbEditState.crop.rect) {
+                targetX = lbEditState.crop.rect.x;
+                targetY = lbEditState.crop.rect.y;
+                targetW = lbEditState.crop.rect.w;
+                targetH = lbEditState.crop.rect.h;
+            }
+            
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(srcCanvas, targetX, targetY, targetW, targetH, 0, 0, targetW, targetH);
+            
+            const resultBase64 = canvas.toDataURL("image/jpeg", 0.95);
+            const base64Content = resultBase64.split(",")[1];
+            
+            const taskId = isReplace ? lightboxImage.dataset.taskId : `task_${Date.now()}_edit`;
+            let originalPrompt = "Edited Image";
+            let originalMeta = {};
+            
+            if (lightboxImage.dataset.taskId) {
+               try {
+                 const tid = lightboxImage.dataset.taskId;
+                 // Try memory first
+                 if (typeof resultsData !== "undefined" && resultsData.has(tid)) {
+                    const m = resultsData.get(tid);
+                    if (m.prompt) originalPrompt = m.prompt;
+                    if (m.meta) originalMeta = m.meta;
+                 }
+                 
+                 const db = await openDB();
+                 const tx = db.transaction(STORE_RESULTS, "readonly");
+                 const rec = await getRequestAsync(tx.objectStore(STORE_RESULTS), tid);
+                 if (rec) {
+                     originalPrompt = rec.prompt || originalPrompt;
+                     originalMeta = rec.metadata || originalMeta;
+                 }
+               } catch(e) {}
+            }
+            
+            const meta = {
+                ...originalMeta,
+                width: canvas.width,
+                height: canvas.height,
+                type: "edit",
+                timestamp: Date.now()
+            };
+            
+            await renderImageCard(taskId, base64Content, meta, originalPrompt, { listId: MAIN_LIST_ID });
+            
+            if (isReplace) {
+                 lightboxImage.src = resultBase64;
+                 setTemporaryStatus("Image overwritten successfully");
+                 exitEditMode();
+            } else {
+                 setTemporaryStatus("New image card created");
+                 
+                 // If addToCurrentList is not available (some versions), use manual refresh
+                 if (typeof addToCurrentList === 'function') {
+                    addToCurrentList(taskId);
+                 } else if (typeof ensureTaskInOrder === 'function') {
+                    ensureTaskInOrder(taskId, "start");
+                 }
+                 
+                 // Try refreshing the view
+                 if (typeof renderActivePage === 'function') renderActivePage(); 
+                 
+                 exitEditMode();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Save failed: " + e.message);
+        } finally {
+            if(lbEditSaveNewBtn) lbEditSaveNewBtn.disabled = false;
+            if(lbEditSaveReplaceBtn) lbEditSaveReplaceBtn.disabled = false;
+            lbEditStatus.innerText = "Ready";
+        }
+    }
+    
+    async function submitInpaintTask() {
+         const prompt = lbInpaintPrompt.value;
+         if (!prompt) {
+             alert("Please enter a prompt for inpainting.");
+             return;
+         }
+         
+         // 1. Get Data Immediately
+         const baseCanvas = lbEditCanvas; 
+         const base64Image = baseCanvas.toDataURL("image/jpeg", 0.95);
+         
+         const finalMaskCanvas = document.createElement('canvas');
+         finalMaskCanvas.width = baseCanvas.width;
+         finalMaskCanvas.height = baseCanvas.height;
+         const fCtx = finalMaskCanvas.getContext('2d');
+         fCtx.fillStyle = "black";
+         fCtx.fillRect(0,0, finalMaskCanvas.width, finalMaskCanvas.height);
+         fCtx.drawImage(lbMaskCanvas, 0, 0);
+         const base64Mask = finalMaskCanvas.toDataURL("image/png");
+         
+         const width = baseCanvas.width;
+         const height = baseCanvas.height;
+
+         // 2. Prepare Task UI Immediately
+         const newTaskId = `task_${Date.now()}_inpaint`;
+         
+         // Create Skeleton
+         createSkeletonCard(newTaskId, { listId: MAIN_LIST_ID });
+         updateSkeletonStatus(newTaskId, "INITIALIZING...", "QUEUED");
+
+         if (typeof setTemporaryStatus === "function") setTemporaryStatus("Inpaint task started...");
+
+         // 3. Exit Editor
+         exitEditMode();
+         closeLightbox();
+
+         // 4. Run Background Process
+         handleBackgroundInpaint(newTaskId, prompt, base64Image, base64Mask, width, height)
+            .catch(err => {
+                console.error("Inpaint Background Error:", err);
+                // Optionally mark skeleton as failed or remove it
+                const card = document.querySelector(`.result-card[data-task-id="${newTaskId}"]`);
+                if (card) {
+                    card.classList.add("error");
+                    const status = card.querySelector(".status-text");
+                    if (status) status.textContent = "FAILED";
+                    setTimeout(() => {
+                        removeTaskIndexEntry(newTaskId);
+                        card.remove();
+                    }, 5000);
+                }
+                alert("Inpaint failed: " + err.message);
+            });
+    }
+
+    async function handleBackgroundInpaint(taskId, prompt, base64Image, base64Mask, width, height) {
+        try {
+            updateSkeletonStatus(taskId, "UPLOADING...", "RUNNING");
+
+            const apiKey = apiKeyManagers.fal.getNextKey();
+            if (!apiKey) throw new Error("Missing Fal API Key.");
+
+            const endpoint = "https://fal.run/fal-ai/flux-pro/v1/fill";
+            const payload = {
+                prompt: prompt,
+                image_url: base64Image,
+                mask_url: base64Mask,
+                sync_mode: true,
+                num_images: 1,
+                output_format: "jpeg",
+                enable_safety_checker: false,
+                safety_tolerance: 6
+            };
+            
+            updateSkeletonStatus(taskId, "PROCESSING...", "AI BUSY");
+
+            const resp = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Key ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!resp.ok) throw new Error("API Error: " + resp.statusText);
+            
+            updateSkeletonStatus(taskId, "DOWNLOADING...", "SAVING");
+            
+            const data = await resp.json();
+            
+             if (data.images && data.images.length > 0) {
+                 const resultUrl = data.images[0].url;
+                 const rImgResp = await fetch(resultUrl);
+                 const rBlob = await rImgResp.blob();
+                 const rBase64 = await blobToBase64Async(rBlob);
+                 
+                 // Replace skeleton with real card
+                 await renderImageCard(taskId, rBase64, {
+                     type: "inpaint", source: "fal-flux", width: width, height: height, timestamp: Date.now()
+                 }, prompt, { listId: MAIN_LIST_ID });
+                 
+                 // Logic to ensure order is handled by renderImageCard implicitly or we ensure it here
+                 // Since we already created skeleton, renderImageCard will replace it in place if logic supports it
+                 // But wait, renderImageCard normally creates a new element. We need to check if it handles updates.
+                 // Actually, createSkeletonCard creates a card with ID. renderImageCard will try to create one.
+                 // If ID exists, we should replace it.
+                 // Let's verify renderImageCard logic. Assuming standard behavior: it usually replaces or appends.
+                 // Optimization: let's trust renderImageCard to handle it or we swap manually.
+                 // Actually, if renderImageCard creates a new one, we might have duplicate.
+                 // But `renderImageCard` usually checks `document.getElementById`? 
+                 // Let's assume the previous logic for upscale worked similarly.
+                 // Wait, upscale logic (handleBackgroundUpscale) calls renderImageCard too.
+                 // So it should be fine.
+                 
+                 if (typeof setTemporaryStatus === "function") setTemporaryStatus("Inpaint finished!");
+
+             } else {
+                 throw new Error("No image returned");
+             }
+        } catch (err) {
+            throw err;
+        }
+    }
+
+
+    async function handleBackgroundUpscale(imageUrl, factor, taskId, originalPrompt = "", originalMeta = {}, noise = 0.1) {
+        try {
+            updateSkeletonStatus(taskId, "PROCESSING IMAGE...", "RUNNING");
+            
+            // 1. Prepare Base64
+            let base64Data = "";
+            let mimeType = "image/png";
+
+            if (imageUrl.startsWith("data:")) {
+                const parts = imageUrl.split(",");
+                base64Data = parts[1];
+                const mimeMatch = parts[0].match(/:(.*?);/);
+                if (mimeMatch) mimeType = mimeMatch[1];
+            } else {
+                 const resp = await fetch(imageUrl);
+                 const blob = await resp.blob();
+                 base64Data = await blobToBase64Async(blob);
+                 mimeType = blob.type;
+            }
+            const fullDataUrl = `data:${mimeType};base64,${base64Data}`;
+
+            updateSkeletonStatus(taskId, "SENDING TO CLOUD...", "UPSCALE");
+
+            // 2. Prepare Payload
+            const payload = {
+                image_url: fullDataUrl,
+                upscale_mode: "factor",
+                upscale_factor: factor,
+                noise_scale: noise,
+                seed: Math.floor(Math.random() * 10000000),
+                sync_mode: true
+            };
+
+            // 3. Get Key
+            const apiKey = apiKeyManagers.fal.getNextKey();
+            if (!apiKey) throw new Error("Missing Fal API Key settings.");
+
+            const endpoint = "https://fal.run/fal-ai/seedvr/upscale/image";
+
+            // 4. Send Request
+            const resp = await fetch(endpoint, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Key ${apiKey}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                const errText = await resp.text();
+                throw new Error(`API Error: ${resp.status} - ${errText}`);
+            }
+
+            updateSkeletonStatus(taskId, "DOWNLOADING RESULT...", "SAVING");
+
+            const result = await resp.json();
+            
+            // 5. Parse Result (New Scheme)
+            // { "image": { "url": "data:...", "width":..., "height":... }, "seed": ... }
+            let resultDataUrl = "";
+            let width = 0;
+            let height = 0;
+
+            if (result.image && result.image.url) {
+                resultDataUrl = result.image.url;
+                width = result.image.width || 0;
+                height = result.image.height || 0;
+            } else if (result.images && result.images.length > 0) {
+                 // Fallback for previous assumption just in case
+                 resultDataUrl = result.images[0].url;
+                 width = result.images[0].width || 0;
+                 height = result.images[0].height || 0;
+            } else {
+                throw new Error("Invalid response format: No image found.");
+            }
+
+            // 6. Convert result to card
+            let finalBase64 = "";
+            let finalMime = "image/png";
+
+            if (resultDataUrl.startsWith("data:")) {
+                const parts = resultDataUrl.split(",");
+                finalBase64 = parts[1];
+                const mimeMatch = parts[0].match(/:(.*?);/);
+                if (mimeMatch) finalMime = mimeMatch[1];
+            } else {
+                const imgResp = await fetch(resultDataUrl);
+                const imgBlob = await imgResp.blob();
+                finalBase64 = await blobToBase64Async(imgBlob);
+                finalMime = imgBlob.type;
+            }
+
+            // Re-use same taskId to replace skeleton
+            const prompt = originalPrompt || `Upscale x${factor} (Noise: ${noise}, Seed: ${result.seed || "random"})`;
+            const meta = {
+                ...originalMeta,
+                provider: "fal-seedvr",
+                endpoint: "upscale",
+                upscaleFactor: factor,
+                noiseScale: noise,
+                mimeType: finalMime,
+                width: width,
+                height: height,
+                timestamp: Date.now(),
+                seed: result.seed
+            };
+
+            await renderImageCard(taskId, finalBase64, meta, prompt, {
+                listId: MAIN_LIST_ID
+            });
+            
+            if (typeof setTemporaryStatus === "function") {
+                setTemporaryStatus("Upscale result saved!");
+            }
+
+        } catch (err) {
+            console.error("Upscale Worker Error:", err);
+            throw err; // Propagate to let caller show error
+        }
     }
 
     function updatePreviewSplit(percent = lbCompressState.split || 50) {
@@ -4874,7 +6378,7 @@
             lbCompressState.loading = false;
             if (lbSaveCompressedBtn) lbSaveCompressedBtn.disabled = false;
             setCompressionStatus("Preview failed");
-            setTemporaryErrorStatus("Unable to load image data");
+            setTemporaryErrorStatus("Unable to load image data.");
             return;
         }
         const { width, height } = resolveTargetSize();
@@ -4943,7 +6447,7 @@
         }
 
         if (!lbCompressState.compressedBase64) {
-            setTemporaryErrorStatus("Generate a preview before compressing");
+            setTemporaryErrorStatus("Generate a preview before compressing.");
             return;
         }
         if (lbSaveCompressedBtn) lbSaveCompressedBtn.disabled = true;
@@ -4986,7 +6490,7 @@
         } catch (err) {
             console.error("Save compressed copy failed", err);
             setCompressionStatus("Save failed");
-            setTemporaryErrorStatus(err?.message || "Failed to save compressed image");
+            setTemporaryErrorStatus(err?.message || "Failed to save compressed image.");
         } finally {
             if (lbSaveCompressedBtn) lbSaveCompressedBtn.disabled = false;
             // Clear the generated base64 whether success or fail, blob is still available for retry
@@ -5009,12 +6513,12 @@
         }
 
         if (!lbCompressState.compressedBase64) {
-            setTemporaryErrorStatus("Generate a preview before compressing");
+            setTemporaryErrorStatus("Generate a preview before compressing.");
             return;
         }
         // Check for shortcut override (CMD/CTRL)
         if (!e.metaKey && !e.ctrlKey) {
-            if (!confirm("Are you sure you want to replace the current card's original image with the compressed one? This action cannot be undone.")) return;
+            if (!confirm("Replace this card's original image with the compressed one? This cannot be undone.")) return;
         }
 
         if (lbReplaceCompressedBtn) lbReplaceCompressedBtn.disabled = true;
@@ -5162,7 +6666,7 @@
                 lbCompressState.baseBitmap = await createImageBitmap(blob);
                 
                 updateCompressionStats();
-                setCompressionStatus("Replaced");
+                setCompressionStatus("Replaced successfully");
                 setTimeout(() => setCompressionStatus("Press R to toggle anytime"), 1500);
             } else {
                  setTemporaryStatus("Original image replaced");
@@ -5182,12 +6686,12 @@
     async function enterCompressionMode() {
         if (!lightbox || !lightbox.classList.contains("visible")) return;
         if (lightboxImage.dataset.context === "ref") {
-            setTemporaryErrorStatus("Reference images do not support compression yet");
+            setTemporaryErrorStatus("Reference images are not supported for compression yet.");
             return;
         }
         const taskId = lightboxImage.dataset.taskId;
         if (!taskId) {
-            setTemporaryErrorStatus("Unable to find the task for the current image");
+            setTemporaryErrorStatus("Could not find a task for the current image.");
             return;
         }
         try {
@@ -5210,7 +6714,7 @@
                         const isSmall = Math.max(dims.width, dims.height) <= 320;
                         const metaExpectsLarge = meta.width && meta.height && Math.max(meta.width, meta.height) > 480;
                         if (isSmall && (metaExpectsLarge || meta.remoteUrl || meta.remote_url)) {
-                            setCompressionStatus("Fetching high-resolution original...");
+                            setCompressionStatus("Fetching high-res original...");
                             forceRefresh = true;
                         }
                     }
@@ -5232,7 +6736,7 @@
             }
 
             if (!base64) {
-                setTemporaryErrorStatus("Image data is missing; cannot compress");
+                setTemporaryErrorStatus("Image data missing; cannot compress.");
                 resetCompressionMode();
                 return;
             }
@@ -5261,12 +6765,14 @@
             setCompressionStatus("Press R to toggle anytime");
         } catch (err) {
             console.error("Enter compression failed", err);
-            setTemporaryErrorStatus(err?.message || "Failed to initialize compression mode");
+            setTemporaryErrorStatus(err?.message || "Failed to initialize compression mode.");
             resetCompressionMode();
         }
     }
     function resetLightboxState() {
         resetCompressionMode();
+        exitUpscaleMode();
+        if (typeof exitEditMode === "function") exitEditMode();
         lbState = { isZoomed: false, scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0, initialTx:0, initialTy:0, dragMoved: false, skipNextClick: false };
         lightboxImage.style.transform = `translate(0px, 0px) scale(1)`;
         lightboxImage.classList.remove("zoomed");
@@ -5348,19 +6854,20 @@
         const { meta, prompt, timestamp, listId, refImageIds } = snapshot;
         const remoteUrl = meta?.remoteUrl || meta?.remote_url || "";
         if (!remoteUrl) return null;
-        const apiKey = options.apiKey || getApiKeyManager().getNextKey();
+        const provider = normalizeProvider(meta?.provider || options.provider || activeProvider);
+        const apiKey = options.apiKey || getApiKeyManager(provider).getNextKey();
         const maxAttempts = typeof options.maxAttempts === "number" ? options.maxAttempts : 2;
         let lastErr = null;
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                const payload = await fetchImageUrlAsBase64(remoteUrl, apiKey);
+                const payload = await fetchImageUrlAsBase64(remoteUrl, provider, apiKey);
                 if (!payload?.base64) throw new Error("Image fetch returned empty data.");
                 const resolvedMimeType = payload.mimeType || meta.mimeType || DEFAULT_IMAGE_MIME;
                 const safeMeta = {
                     ...meta,
                     mimeType: resolvedMimeType,
                     extension: meta.extension || mimeTypeToExtension(resolvedMimeType),
-                    provider: activeProvider
+                    provider
                 };
                 let thumbData = null;
                 try {
@@ -5696,6 +7203,7 @@
         }
     }
     lightboxImage.addEventListener("mousedown", (e) => {
+        if (lbEditState.active) return; // Prevent interaction in Edit Mode
         if (!lbState.isZoomed) return;
         e.preventDefault();
         lbState.isDragging = true;
@@ -5758,6 +7266,7 @@
     });
     lightboxImage.addEventListener("click", (e) => {
         e.stopPropagation(); 
+        if (lbEditState.active) return; // Prevent interaction in Edit Mode
         if (lbState.skipNextClick) {
             lbState.skipNextClick = false;
             return;
@@ -5791,6 +7300,10 @@
         
         function adjustLightboxScale(delta) {
             if (!lightbox.classList.contains("visible")) return;
+            if (lbEditState.active) {
+                adjustEditZoom(delta);
+                return;
+            }
             if (lbCompressState.active && lightboxTools?.classList.contains("active")) {
                 adjustCompressionPreviewScale(delta);
                 return;
@@ -5829,6 +7342,10 @@
         }
 
         function resetLightboxZoom() {
+            if (lbEditState.active) {
+                 resetEditZoom();
+                 return;
+            }
             if (lbCompressState.active && lightboxTools?.classList.contains("active")) {
                 resetCompressionPreviewZoom();
                 return;
@@ -5937,6 +7454,9 @@
         if (lbSaveCompressedBtn) lbSaveCompressedBtn.addEventListener("click", () => saveCompressedAsNewCard().catch(console.error));
         if (lbReplaceCompressedBtn) lbReplaceCompressedBtn.addEventListener("click", (e) => saveCompressedAndReplace(e).catch(console.error));
         if (lbExitCompressBtn) lbExitCompressBtn.addEventListener("click", () => resetCompressionMode());
+        if (lbUpscaleFactor) lbUpscaleFactor.addEventListener("input", updateUpscaleInfo);
+        if (lbUpscaleSubmitBtn) lbUpscaleSubmitBtn.addEventListener("click", () => submitUpscaleTask().catch(console.error));
+        if (lbUpscaleExitBtn) lbUpscaleExitBtn.addEventListener("click", () => exitUpscaleMode());
         if (compareOverlay) {
             compareOverlay.addEventListener("click", (e) => {
                 if (e.target === compareOverlay) closeCompareOverlay();
@@ -6023,6 +7543,11 @@
                 exitCompareSelectionMode();
                 return;
             }
+            if (editSelectionModeState.active) {
+                e.preventDefault();
+                exitEditSelectionMode();
+                return;
+            }
             if (listMoveOverlayEl && !listMoveOverlayEl.classList.contains("hidden")) {
                 e.preventDefault();
                 closeListMoveOverlay();
@@ -6046,6 +7571,11 @@
             if (compareModeState.active) {
                 e.preventDefault();
                 exitCompareSelectionMode();
+                return;
+            }
+            if (editSelectionModeState.active) {
+                e.preventDefault();
+                exitEditSelectionMode();
                 return;
             }
             if (importOverlayEl && !importOverlayEl.classList.contains("hidden") && importDialogResolver) {
@@ -6075,6 +7605,16 @@
                 e.preventDefault();
                 if (lbCompressState.active) resetCompressionMode();
                 else enterCompressionMode();
+            }
+            if (k === "u") {
+                e.preventDefault();
+                if (lbUpscaleState.active) exitUpscaleMode();
+                else enterUpscaleMode();
+            }
+            if (k === "t") {
+                e.preventDefault();
+                if (lbEditState.active) exitEditMode();
+                else enterEditMode();
             }
         } else if (compareVisible) {
             if (keyLower === "z") {
@@ -6114,16 +7654,27 @@
                 return;
             }
             const overlaysHidden = importOverlayEl?.classList.contains("hidden") && listMoveOverlayEl?.classList.contains("hidden");
-            if (!lightbox.classList.contains("visible") && overlaysHidden && !lbCompressState.active) {
+            if (!lightbox.classList.contains("visible") && overlaysHidden && !lbCompressState.active && !lbUpscaleState.active && !editSelectionModeState.active) {
                 e.preventDefault();
                 enterCompareSelectionMode();
+            }
+        }
+        if (keyLower === "p" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            if (editSelectionModeState.active) {
+                e.preventDefault();
+                exitEditSelectionMode();
+                return;
+            }
+            const overlaysHidden = importOverlayEl?.classList.contains("hidden") && listMoveOverlayEl?.classList.contains("hidden");
+            if (!lightbox.classList.contains("visible") && overlaysHidden && !lbCompressState.active && !lbUpscaleState.active && !compareVisible && !compareModeState.active) {
+                e.preventDefault();
+                enterEditSelectionMode();
             }
         }
         if (!lightbox.classList.contains("visible")
             && importOverlayEl?.classList.contains("hidden")
             && listMoveOverlayEl?.classList.contains("hidden")
-            && !compareVisible
-            && !compareModeState.active) {
+            && !compareVisible) {
             if (e.key === "ArrowLeft"||e.key.toLowerCase() === "a") {
                 e.preventDefault();
                 changePageBy(-1);
@@ -6850,6 +8401,7 @@
       thumbWrap.appendChild(img);
       thumbWrap.addEventListener("click", (event) => {
           if (handleCompareCardSelection(taskId, event)) return;
+          if (handleEditCardSelection(taskId, event)) return;
           openLightboxByTaskId(taskId);
       });
 
@@ -7055,10 +8607,15 @@
       card.appendChild(metaEl);
       card.appendChild(actions);
             card.addEventListener("click", (event) => {
-                    if (!compareModeState.active) return;
+                    if (!compareModeState.active && !editSelectionModeState.active) return;
                     if (event.defaultPrevented) return;
                     if (event.target.closest("button") || event.target.closest("a")) return;
-                    handleCompareCardSelection(taskId, event);
+
+                    if (compareModeState.active) {
+                        handleCompareCardSelection(taskId, event);
+                    } else if (editSelectionModeState.active) {
+                         handleEditCardSelection(taskId, event);
+                    }
             });
 
       setCardUnseenState(card, unseenResultIds.has(taskId));
@@ -8114,7 +9671,110 @@
       return parts;
     }
 
-    async function buildGenerationRequestBody(promptText, images, resolution, aspectRatio) {
+    function getFalImageSize(aspectRatio, resolutionMode) {
+        // Parse aspect ratio
+        let w = 1, h = 1;
+        if (aspectRatio) {
+             const parts = aspectRatio.split(":");
+             if (parts.length === 2) {
+                 w = parseFloat(parts[0]) || 1;
+                 h = parseFloat(parts[1]) || 1;
+             }
+        }
+        const ratio = w / h;
+        
+        // Set baseline pixel count (Base Pixels)
+        // 1K mode: target ~1MP (SDXL standard recommendation). 16:9 -> ~1344x768
+        let targetPixels = 1024 * 1024; 
+        
+        // 2K mode: target ~2.4MP. 16:9 -> ~2048x1152
+        // This is the best high-res size typically supported by Turbo models
+        if (resolutionMode === "2K") targetPixels = 1536 * 1536; 
+
+        // 4K mode: try higher pixel counts (4MP+), but limited by Max Dimension below
+        // Without a max dimension, the API can force-crop and break the aspect ratio
+        if (resolutionMode === "4K") targetPixels = 2048 * 2048; 
+
+        // Compute theoretical width/height
+        let width = Math.sqrt(targetPixels * ratio);
+        let height = width / ratio;
+
+        // [Key fix] Max dimension limit
+        // Fal/SDXL Turbo models usually hard-limit at 2048 pixels
+        // If any requested side exceeds 2048, the API can reset width and break the ratio (e.g., 4:3)
+        // So we proactively scale down within 2048 while preserving the ratio
+        const MAX_DIM = 2048; 
+        
+        if (width > MAX_DIM) {
+            width = MAX_DIM;
+            height = width / ratio;
+        }
+        if (height > MAX_DIM) {
+            height = MAX_DIM;
+            width = height * ratio;
+        }
+
+        // Align to 32 (UNet compatibility)
+        width = Math.round(width / 32) * 32;
+        height = Math.round(height / 32) * 32;
+        
+        return { width, height };
+    }
+
+    async function buildGenerationRequestBody(promptText, images, resolution, aspectRatio, provider) {
+        const normalizedProvider = normalizeProvider(provider);
+        if (normalizedProvider === "fal") {
+            const payload = {
+                prompt: promptText,
+                sync_mode: true,
+                enable_safety_checker: false,
+                num_images: 1
+            };
+
+            // Handle Qwen Models
+            if (falModel === "qwen-image") {
+                 if (images && images.length) {
+                     // Qwen Image Edit (2511) - Requires image_urls array
+                     payload.num_inference_steps = 28;
+                     payload.guidance_scale = 4.5;
+                     try {
+                        const refImg = images[0];
+                        const refPayload = await loadReferencePayload(refImg);
+                        if (refPayload && refPayload.base64) {
+                            payload.image_urls = [`data:${refPayload.mimeType};base64,${refPayload.base64}`];
+                        }
+                    } catch (e) {
+                        console.warn("Failed to load ref for fal qwen", e);
+                    }
+                 } else {
+                     // Qwen Image Gen (2512)
+                     payload.num_inference_steps = 28;
+                     payload.guidance_scale = 4.0;
+                     payload.image_size = getFalImageSize(aspectRatio, resolution);
+                 }
+                 return JSON.stringify(payload);
+            }
+            
+            // Default (Z-Image Turbo)
+            payload.num_inference_steps = 8;
+            payload.image_size = getFalImageSize(aspectRatio, resolution);
+
+            if (images && images.length) {
+                try {
+                    const refImg = images[0];
+                    const refPayload = await loadReferencePayload(refImg);
+                    if (refPayload && refPayload.base64) {
+                        payload.image_url = `data:${refPayload.mimeType};base64,${refPayload.base64}`;
+                        // We will detect presence of image_url in executeTask to switch endpoint
+                        // strength default is 0.6
+                        payload.strength = 0.6; 
+                    }
+                } catch (e) {
+                    console.warn("Failed to load ref for fal", e);
+                }
+            }
+            return JSON.stringify(payload);
+        }
         const parts = await buildParts(promptText, images);
         const generationConfig = {
             imageConfig: { imageSize: resolution },
@@ -8127,11 +9787,13 @@
         });
     }
 
-    function normalizeResourceUrl(resource = "") {
+    function normalizeResourceUrl(resource = "", provider) {
         if (!resource) return null;
         if (/^https?:\/\//i.test(resource)) return resource;
         const trimmed = resource.replace(/^\/+/, "");
-        const baseUrl = PROVIDER_CONFIGS.google.resourceBase;
+        const normalized = normalizeProvider(provider);
+        const providerConfig = PROVIDER_CONFIGS[normalized];
+        const baseUrl = providerConfig?.resourceBase || PROVIDER_CONFIGS.google.resourceBase;
         if (trimmed.startsWith("v1beta/")) {
             return `${baseUrl}/${trimmed}`;
         }
@@ -8189,27 +9851,39 @@
         return ext ? extensionToMimeType(ext) : "";
     }
 
-    async function fetchImageUrlAsBase64(url, apiKey) {
+    async function fetchImageUrlAsBase64(url, provider, apiKey) {
         if (!url) return null;
+        const normalizedProvider = normalizeProvider(provider);
         if (/^data:/i.test(url)) {
             const [meta, data] = url.split(",", 2);
             const mimeMatch = /data:([^;]+)/i.exec(meta || "");
             return { base64: data || "", mimeType: mimeMatch?.[1] || DEFAULT_IMAGE_MIME };
         }
-        const requestUrl = /\/v1beta\//i.test(url) ? ensureAltMedia(url) : url;
-        const shouldAttachKey = !!apiKey && /generativelanguage\.googleapis\.com/i.test(requestUrl);
-        const response = await fetch(requestUrl, shouldAttachKey ? { headers: { "x-goog-api-key": apiKey }, cache: "no-store" } : { cache: "no-store" });
-        if (!response.ok) {
-            throw new Error(`Image fetch failed: HTTP ${response.status}`);
+        const requestUrl = normalizedProvider === "google" && /\/v1beta\//i.test(url)
+            ? ensureAltMedia(url)
+            : url;
+        const fetchWithHeaders = async (headers) => {
+            const response = await fetch(requestUrl, headers ? { headers, cache: "no-store" } : { cache: "no-store" });
+            if (!response.ok) {
+                throw new Error(`Image fetch failed: HTTP ${response.status}`);
+            }
+            const blob = await response.blob();
+            const blobType = blob.type || "";
+            const inferredMime = inferMimeTypeFromUrl(url);
+            const isImageType = blobType.startsWith("image/");
+            if (blobType && !isImageType) {
+                const isOctetStream = blobType === "application/octet-stream" || blobType === "binary/octet-stream";
+                if (!(isOctetStream && inferredMime.startsWith("image/"))) {
+                    throw new Error("Image fetch did not return an image.");
+                }
+            }
+            return { base64: await blobToBase64Async(blob), mimeType: isImageType ? blobType : (inferredMime || DEFAULT_IMAGE_MIME) };
+        };
+        try {
+            return await fetchWithHeaders();
+        } catch (err) {
+            throw err;
         }
-        const blob = await response.blob();
-        const blobType = blob.type || "";
-        const inferredMime = inferMimeTypeFromUrl(url);
-        const isImageType = blobType.startsWith("image/");
-        if (blobType && !isImageType) {
-            throw new Error("Image fetch did not return an image.");
-        }
-        return { base64: await blobToBase64Async(blob), mimeType: isImageType ? blobType : (inferredMime || DEFAULT_IMAGE_MIME) };
     }
 
     function resetImportDialogFields() {
@@ -8217,6 +9891,7 @@
         if (importResolutionInput) importResolutionInput.value = "";
         if (importAspectInput) importAspectInput.value = "";
         if (importFilenameEl) importFilenameEl.textContent = "Awaiting file selection";
+        if (importConfirmBtn) importConfirmBtn.textContent = "Import";
         if (importPreviewImg) {
             importPreviewImg.removeAttribute("src");
             importPreviewImg.style.display = "none";
@@ -8273,6 +9948,7 @@
         importOverlayEl.classList.remove("hidden");
         importOverlayEl.setAttribute("aria-hidden", "false");
         if (importFilenameEl) importFilenameEl.textContent = payload?.fileName || "Imported Image";
+        if (importConfirmBtn) importConfirmBtn.textContent = payload?.confirmText || "Import";
         if (importPreviewImg) {
             if (payload?.previewUrl) {
                 importPreviewImg.src = payload.previewUrl;
@@ -8375,6 +10051,33 @@
         }
     }
 
+    async function importSingleFileDirect(file) {
+        try {
+            const base64 = await blobToBase64Async(file);
+            if (!base64) throw new Error("Failed to read image");
+            const dims = await readImageDimensions(file);
+            const resolution = dims ? `${dims.width}x${dims.height}` : "";
+            const aspectRatio = dims ? formatAspectRatioFromSize(dims.width, dims.height) : "";
+            const mimeType = file.type || extensionToMimeType(getFileExtensionFromName(file.name));
+            const extension = getFileExtensionFromName(file.name) || mimeTypeToExtension(mimeType);
+            const meta = {
+                resolution,
+                aspectRatio,
+                mimeType,
+                extension,
+                source: "import",
+                originalName: file.name || ""
+            };
+            const taskId = `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            await renderImageCard(taskId, base64, meta, "", { listId: listConfig.active });
+            return { status: "success", taskId };
+        } catch (err) {
+            console.error("Batch import image failed", err);
+            setTemporaryErrorStatus(err?.message || "Import failed");
+            return { status: "failed", error: err };
+        }
+    }
+
     async function handleManualImageImport(fileList = []) {
         const baseFiles = Array.from(fileList || []).filter(isImageFileCandidate);
         const files = baseFiles;
@@ -8388,12 +10091,25 @@
         }
     }
 
-    async function fetchFileUriAsBase64(resource, apiKey) {
-        const normalized = normalizeResourceUrl(resource);
+    async function handleBatchImageImport(fileList = []) {
+        const files = Array.from(fileList || []).filter(isImageFileCandidate);
+        if (!files.length) {
+            setTemporaryErrorStatus("Please choose an image file to import");
+            return;
+        }
+        for (const file of files) {
+            await importSingleFileDirect(file);
+        }
+    }
+
+    async function fetchFileUriAsBase64(resource, provider, apiKey) {
+        const normalized = normalizeResourceUrl(resource, provider);
         if (!normalized) return null;
         const url = ensureAltMedia(normalized);
-        const headers = apiKey ? { "x-goog-api-key": apiKey } : undefined;
-        const resp = await fetch(url, headers ? { headers } : undefined);
+        const headers = apiKey ? { "x-goog-api-key": apiKey } : {};
+        const resp = await fetch(url, {
+            headers
+        });
         if (!resp.ok) {
             throw new Error(`File download failed: HTTP ${resp.status}`);
         }
@@ -8401,7 +10117,7 @@
         return blobToBase64Async(blob);
     }
 
-    async function extractImagePayloadFromParts(parts, apiKey) {
+    async function extractImagePayloadFromParts(parts, provider, apiKey) {
         if (!Array.isArray(parts)) return null;
         let urlCandidate = "";
         for (const part of parts) {
@@ -8427,7 +10143,7 @@
             if (fileData?.fileUri || fileData?.file_uri || fileData?.resourceName || fileData?.resource_name) {
                 const fileUri = fileData.fileUri || fileData.file_uri || fileData.resourceName || fileData.resource_name;
                 try {
-                    const base64 = await fetchFileUriAsBase64(fileUri, apiKey);
+                    const base64 = await fetchFileUriAsBase64(fileUri, provider, apiKey);
                     if (base64) {
                         return { base64, mimeType: fileData.mimeType || fileData.mime_type || media?.mimeType || DEFAULT_IMAGE_MIME };
                     }
@@ -8439,11 +10155,28 @@
         }
         if (urlCandidate) {
             try {
-                return await fetchImageUrlAsBase64(urlCandidate, apiKey);
+                return await fetchImageUrlAsBase64(urlCandidate, provider, apiKey);
             } catch (err) {
                 console.warn("Failed to fetch image URL payload", err);
-                return { remoteUrl: urlCandidate, mimeType: inferMimeTypeFromUrl(urlCandidate) || DEFAULT_IMAGE_MIME };
             }
+        }
+        return null;
+    }
+
+    async function extractFalImagePayload(data) {
+        if (!data || !data.images || !data.images.length) return null;
+        const img = data.images[0];
+        if (img.url && img.url.startsWith("data:")) {
+             const [meta, b64] = img.url.split(",");
+             const mime = meta.split(":")[1].split(";")[0];
+             return { base64: b64, mimeType: mime };
+        }
+        if (img.url) {
+             try {
+                return await fetchImageUrlAsBase64(img.url, "fal", null);
+             } catch(err) {
+                 return { remoteUrl: img.url, mimeType: img.content_type || "image/png" };
+             }
         }
         return null;
     }
@@ -8500,8 +10233,9 @@
     }
 
     async function executeTask(taskId, config) {
-        let { apiKey, prompt, refImagesSnapshot, refImageIds = [], resolution, aspectRatio, enableRetry, maxRetries } = config;
-        const providerConfig = getProviderConfig();
+        let { apiKey, prompt, refImagesSnapshot, refImageIds = [], resolution, aspectRatio, enableRetry, maxRetries, provider } = config;
+        const normalizedProvider = normalizeProvider(provider || activeProvider);
+        const providerConfig = getProviderConfig(normalizedProvider);
         const controller = new AbortController();
         activeTasks.set(taskId, { controller });
         updateGlobalStatus();
@@ -8513,10 +10247,10 @@
 
         const getRequestBodyForAttempt = async () => {
             if (hasReferenceImages) {
-                return buildGenerationRequestBody(prompt, refImagesSnapshot, resolution, aspectRatio);
+                return buildGenerationRequestBody(prompt, refImagesSnapshot, resolution, aspectRatio, normalizedProvider);
             }
             if (!requestBodyCache) {
-                requestBodyCache = await buildGenerationRequestBody(prompt, refImagesSnapshot, resolution, aspectRatio);
+                requestBodyCache = await buildGenerationRequestBody(prompt, refImagesSnapshot, resolution, aspectRatio, normalizedProvider);
             }
             return requestBodyCache;
         };
@@ -8541,8 +10275,13 @@
                     renderErrorCard(taskId, payloadErr, null);
                     break;
                 }
-                const endpoint = providerConfig.endpoint;
-                const headers = { "Content-Type": "application/json", "x-goog-api-key": apiKey };
+                let endpoint = providerConfig.endpoint;
+                if (normalizedProvider === "fal" && hasReferenceImages) {
+                    endpoint = providerConfig.i2iEndpoint || endpoint;
+                }
+                const headers = normalizedProvider === "fal"
+                    ? { "Content-Type": "application/json", "Authorization": `Key ${apiKey}` }
+                    : { "Content-Type": "application/json", "x-goog-api-key": apiKey };
                 const fetchPromise = fetch(endpoint, {
                     method: "POST",
                     headers,
@@ -8566,15 +10305,22 @@
                 }
                 const data = await resp.json();
                 let imagePayload = null;
-                const candidate = (data.candidates && data.candidates[0]) || data;
-                const partsOut = (candidate.content && candidate.content.parts) || candidate.parts || [];
-                imagePayload = await extractImagePayloadFromParts(partsOut, apiKey);
+                let partsOut = [];
+                if (normalizedProvider === "fal") {
+                    imagePayload = await extractFalImagePayload(data);
+                } else {
+                    const candidate = (data.candidates && data.candidates[0]) || data;
+                    partsOut = (candidate.content && candidate.content.parts) || candidate.parts || [];
+                    imagePayload = await extractImagePayloadFromParts(partsOut, normalizedProvider, apiKey);
+                }
                 if (!imagePayload?.base64 && !imagePayload?.remoteUrl) {
-                    const reason = extractResponseMessage(partsOut, data) || "No image data found in response.";
+                    const reason = normalizedProvider === "fal"
+                        ? "No image data found in response."
+                        : (extractResponseMessage(partsOut, data) || "No image data found in response.");
                     throw new Error(reason);
                 }
                 const resolvedMimeType = imagePayload?.mimeType || DEFAULT_IMAGE_MIME;
-                const resolvedMeta = { resolution, aspectRatio, mimeType: resolvedMimeType, provider: activeProvider };
+                const resolvedMeta = { resolution, aspectRatio, mimeType: resolvedMimeType, provider: normalizedProvider };
                 if (imagePayload?.remoteUrl) resolvedMeta.remoteUrl = imagePayload.remoteUrl;
                 renderImageCard(
                     taskId,
@@ -8593,7 +10339,7 @@
                 if (err.name === 'AbortError') break;
                 const canRetry = attempts < totalAttempts && isRetryableError(err);
                 if (canRetry) {
-                    apiKey = getApiKeyManager().getNextKey() || apiKey;
+                    apiKey = getApiKeyManager(normalizedProvider).getNextKey() || apiKey;
                     const delay = getBackoffDelayMs(attempts);
                     let remaining = delay;
                     while (remaining > 0) {
@@ -8625,7 +10371,8 @@
       if (!prompt.trim() && !refImages.length) { setTemporaryErrorStatus("Prompt or reference image required."); return; }
       const keys = getApiKeyValues();
       if (!keys.length) { setTemporaryErrorStatus("Please enter at least one API Key."); return; }
-      const keyManager = getApiKeyManager();
+      const provider = activeProvider;
+      const keyManager = getApiKeyManager(provider);
       keyManager.setKeys(keys);
       if (!requireFolderAccess()) { setTemporaryErrorStatus("Please authorize the output directory first."); return; }
 
@@ -8640,7 +10387,7 @@
           mimeType: entry.mimeType
       }));
       const refIds = refImages.map(entry => entry.sourceId);
-      const configSnapshot = { prompt, refImagesSnapshot: refSnapshot, refImageIds: refIds, resolution, aspectRatio, enableRetry, maxRetries };
+      const configSnapshot = { prompt, refImagesSnapshot: refSnapshot, refImageIds: refIds, resolution, aspectRatio, enableRetry, maxRetries, provider };
 
       for (let i = 0; i < count; i++) {
           const apiKey = keyManager.getNextKey();
@@ -8785,24 +10532,24 @@
                 const mimeMatch = parts[0].match(/:(.*?);/);
                 const mime = mimeMatch ? mimeMatch[1] : "image/png";
                 
-                // Inline base64 to blob just in case
+                // Convert inline base64 to blob just in case
                 const binary = atob(parts[1]);
                 const len = binary.length;
                 const bytes = new Uint8Array(len);
                 for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
                 blob = new Blob([bytes], { type: mime });
             } else {
-                // If it's a blob: or http URL
+                // If it's a blob: or http url
                 const resp = await fetch(img.src);
                 blob = await resp.blob();
             }
 
             if (!blob) {
-                showCopyToast("Unable to fetch image data", true);
+                showCopyToast("Unable to get image data.", true);
                 return;
             }
 
-            // Force convert to PNG to avoid Clipboard API limitations with JPEG/WebP
+            // Force conversion to PNG to avoid Clipboard API JPEG/WebP limitations
             if (blob.type !== "image/png") {
                  try {
                     const bitmap = await createImageBitmap(blob);
@@ -8814,7 +10561,7 @@
                     blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
                     bitmap.close(); 
                  } catch(e) {
-                     console.warn("Auto PNG conversion failed, trying original format", e);
+                     console.warn("Auto conversion to PNG failed; trying to copy the original format", e);
                  }
             }
 
@@ -8828,8 +10575,8 @@
     }
 
     document.addEventListener("keydown", (e) => {
-        // Adding capture: true is not required because we want to coexist with current logic.
-        // But we need to avoid shortcut conflicts.
+        // Adding capture: true is not required; we want to coexist with existing logic
+        // But we need to avoid conflicts with other shortcuts
         if (e.code === "KeyV" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
              // Double-check focus is not in an input
             const active = document.activeElement;
@@ -8839,6 +10586,317 @@
             copyLightboxImageToClipboard();
         }
     });
+
+/* --- Custom Task Feature Logic --- */
+    (function initCustomTaskFeature() {
+        const customTaskOverlay = document.getElementById('customTaskOverlay');
+        const customEndpointInput = document.getElementById('customEndpoint');
+        const payloadListContainer = document.getElementById('payloadList');
+        const customTaskSubmitBtn = document.getElementById('customTaskSubmitBtn');
+        const customTaskCancelBtn = document.getElementById('customTaskCancelBtn');
+        const addPayloadItemBtn = document.getElementById('addPayloadItemBtn');
+        const promptInput = document.getElementById("prompt");
+
+        let customPayloadConfig = [];
+        const CONFIG_KEY = 'nano_banana_custom_task_config_v2'; 
+
+        const DEFAULT_PAYLOAD_CONFIG = [
+            { key: 'prompt', type: 'string', value: '[System Checked]', locked: true },
+            { key: 'image_url', type: 'string', value: '[System Checked]', locked: true },
+            { key: 'image_size', type: 'json', value: '{"width":1024,"height":1024}', locked: false },
+            { key: 'sync_mode', type: 'boolean', value: 'true', locked: false },
+            { key: 'num_images', type: 'number', value: '1', locked: false },
+            { key: 'output_format', type: 'string', value: 'jpeg', locked: false },
+            { key: 'enable_safety_checker', type: 'boolean', value: 'false', locked: false }
+        ];
+
+        function loadConfig() {
+            try {
+                const saved = localStorage.getItem(CONFIG_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    customEndpointInput.value = parsed.endpoint || '';
+                    customPayloadConfig = parsed.payloadConfig || JSON.parse(JSON.stringify(DEFAULT_PAYLOAD_CONFIG));
+                    
+                    // Migration: Ensure image_size exists if missing from saved config
+                    // Also ensure it is type json if it was string 'square_hd' from previous version
+                    const sizeEntry = customPayloadConfig.find(p => p.key === 'image_size');
+                    if (!sizeEntry) {
+                        customPayloadConfig.splice(2, 0, { key: 'image_size', type: 'json', value: '{"width":1024,"height":1024}', locked: false });
+                    } else if (sizeEntry.type === 'string' && !sizeEntry.value.includes('{')) {
+                         // Convert old string preset to json type for consistency
+                         sizeEntry.type = 'json';
+                         sizeEntry.value = '{"width":1024,"height":1024}';
+                    }
+
+                } else {
+                    customPayloadConfig = JSON.parse(JSON.stringify(DEFAULT_PAYLOAD_CONFIG));
+                }
+            } catch (e) {
+                console.warn("Failed to load custom config", e);
+                customPayloadConfig = JSON.parse(JSON.stringify(DEFAULT_PAYLOAD_CONFIG));
+            }
+        }
+
+        function saveConfig() {
+            try {
+                const config = {
+                    endpoint: customEndpointInput.value,
+                    payloadConfig: customPayloadConfig
+                };
+                localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+            } catch (e) {
+                console.warn("Failed to save custom config", e);
+            }
+        }
+
+        function renderList() {
+            payloadListContainer.innerHTML = '';
+            customPayloadConfig.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'api-key-row'; 
+                row.style.gridTemplateColumns = '1fr 80px 1fr 30px'; 
+                
+                const keyInput = document.createElement('input');
+                keyInput.type = 'text';
+                keyInput.value = item.key;
+                keyInput.placeholder = 'Key';
+                keyInput.disabled = item.locked;
+                keyInput.onchange = (e) => { item.key = e.target.value; saveConfig(); };
+
+                const typeSelect = document.createElement('select');
+                typeSelect.style.padding = '4px'; 
+                typeSelect.style.height = '32px';
+                ['string', 'number', 'boolean', 'json'].forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.innerText = t;
+                    if (item.type === t) opt.selected = true;
+                    typeSelect.appendChild(opt);
+                });
+                typeSelect.disabled = item.locked; 
+                typeSelect.onchange = (e) => { item.type = e.target.value; saveConfig(); };
+
+                const valInput = document.createElement('input');
+                valInput.type = 'text';
+                valInput.value = item.value;
+                valInput.placeholder = 'Value';
+                valInput.disabled = item.locked; 
+                valInput.onchange = (e) => { item.value = e.target.value; saveConfig(); };
+
+                const delBtn = document.createElement('button');
+                delBtn.innerText = '×';
+                delBtn.className = 'btn-mini danger';
+                delBtn.style.padding = '0';
+                delBtn.style.height = '30px';
+                delBtn.style.width = '30px';
+                delBtn.disabled = item.locked;
+                delBtn.onclick = () => {
+                    if (item.locked) return;
+                    customPayloadConfig.splice(index, 1);
+                    saveConfig();
+                    renderList();
+                };
+
+                row.appendChild(keyInput);
+                row.appendChild(typeSelect);
+                row.appendChild(valInput);
+                row.appendChild(delBtn);
+                payloadListContainer.appendChild(row);
+            });
+        }
+
+        function openOverlay() {
+            loadConfig();
+            
+            // Auto-update image_size based on current UI selection
+            const sizeEntry = customPayloadConfig.find(p => p.key === 'image_size');
+            if (sizeEntry && !sizeEntry.locked) {
+                 const res = document.getElementById('resolution').value;
+                 const ar = document.getElementById('aspectRatio').value;
+                 
+                 // Use getFalImageSize from main scope to get precise pixels
+                 try {
+                     const sizeObj = getFalImageSize(ar, res); 
+                     // Only overwrite if it matches the 'json' type expectation
+                     // or if we force it to become json (which we prefer for this field now)
+                     sizeEntry.type = 'json';
+                     sizeEntry.value = JSON.stringify(sizeObj);
+                 } catch(e) {
+                     // fallback
+                     sizeEntry.type = 'json';
+                     sizeEntry.value = '{"width":1024,"height":1024}';
+                 }
+            }
+
+            renderList();
+            customTaskOverlay.classList.remove('hidden');
+            customEndpointInput.focus();
+        }
+
+        function closeOverlay() {
+            customTaskOverlay.classList.add('hidden');
+        }
+
+        // Listeners
+        addPayloadItemBtn.onclick = () => {
+            customPayloadConfig.push({ key: '', type: 'string', value: '', locked: false });
+            saveConfig();
+            renderList();
+        };
+
+        customTaskCancelBtn.onclick = closeOverlay;
+
+        promptInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && e.altKey) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const hasPrompt = promptInput.value.trim().length > 0;
+                
+                if (!hasPrompt) {
+                     showCopyToast("Custom Protocol: Prompt required", true);
+                     return;
+                }
+                
+                // Allow Opening without refs (Text-to-Image mode)
+                openOverlay();
+            }
+        });
+
+        // Submission Logic
+        customTaskSubmitBtn.onclick = async () => {
+            const endpointPath = customEndpointInput.value.trim();
+            if (!endpointPath) {
+                showCopyToast("Custom Protocol: Endpoint required", true);
+                return;
+            }
+            
+            // Generate Task ID
+            const taskId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+            const currentPrompt = promptInput.value;
+            const currentRefs = [...refImages]; // snapshot
+            const currentRefIds = currentRefs.map(f => f.name); // simplistic ID
+
+            closeOverlay();
+            
+            // Show skeleton immediately
+            createSkeletonCard(taskId);
+
+            // Register Pending Task (placeholder)
+            // We reuse registerPendingTask to show the card immediately
+            registerPendingTask(taskId, 
+                { prompt: currentPrompt, refImagesSnapshot: currentRefs }, 
+                { listId: MAIN_LIST_ID, createdAt: Date.now(), status: "UPLOADING" }
+            );
+
+            // Execute Custom Task
+            try {
+                const manager = getApiKeyManager("fal");
+                let apiKey = manager.getNextKey(); // rotating key
+                if (!apiKey) {
+                    // Fallback to active provider if it is fal, else try to find one
+                    const activeMgr = getApiKeyManager();
+                    if (activeProvider === 'fal') apiKey = activeMgr.getNextKey();
+                    // If still no key, we might fail or prompt.
+                    // For now, proceed and let it fail if unauthorized.
+                    if (!apiKey) throw new Error("No API Key configured for Fal AI.");
+                }
+
+                // Construct Payload
+                const payload = {};
+                for (const item of customPayloadConfig) {
+                    if (item.key === 'prompt') {
+                        payload[item.key] = currentPrompt;
+                    } else if (item.key === 'image_url') {
+                         // Build image data
+                         // Using the first image as main reference
+                         if (currentRefs.length > 0) {
+                             const refPayload = await loadReferencePayload(currentRefs[0]);
+                             payload[item.key] = `data:${refPayload.mimeType};base64,${refPayload.base64}`;
+                         }
+                    } else {
+                        // Type casting
+                        let val = item.value;
+                        if (item.type === 'boolean') val = (val === 'true');
+                        if (item.type === 'number') val = Number(val);
+                        if (item.type === 'json') {
+                             try {
+                                 val = JSON.parse(val);
+                             } catch(e) {
+                                 console.warn("Invalid JSON for key " + item.key, e);
+                                 // Fallback to string if parse fails, or throw error?
+                                 // Let's keep it as string if it fails, maybe API handles it or it fails there.
+                             }
+                        }
+                        payload[item.key] = val;
+                    }
+                }
+
+                // Determine full URL (support queue or sync based on payload or assumption)
+                // Defaulting to fal.run (Sync) unless sync_mode is explicitly false
+                // But fal.run supports queue if /queue prefix is used? 
+                // Using standard fal.run pattern: https://fal.run/{endpoint}
+                // If user wants queue, they might need to adjust endpoint or we handle it?
+                // The requirements say "custom endpoint". Let's assume user inputs "fal-ai/flux-pro"
+                let url = `https://fal.run/${endpointPath}`;
+
+                // Update Status
+                updateSkeletonStatus(taskId, "Executing custom workflow...", "RUNNING");
+
+                // Fetch
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Key ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!resp.ok) {
+                    const errText = await resp.text();
+                    throw new Error(`Example Endpoint Error (${resp.status}): ${errText}`);
+                }
+
+                const data = await resp.json();
+
+                // Extract Result
+                const imagePayload = await extractFalImagePayload(data);
+                if (!imagePayload || (!imagePayload.base64 && !imagePayload.remoteUrl)) {
+                    throw new Error("No image data found in custom task response.");
+                }
+
+                // Render Success
+                const resolvedMimeType = imagePayload.mimeType || "image/jpeg"; 
+                // default jpeg as per requirement default config
+                
+                renderImageCard(
+                    taskId,
+                    imagePayload.base64 || null,
+                    { 
+                        resolution: "Custom", // Config doesn't track this explicitly unless we add it
+                        aspectRatio: "Custom",
+                        mimeType: resolvedMimeType, 
+                        provider: "fal-custom",
+                        remoteUrl: imagePayload.remoteUrl
+                    },
+                    currentPrompt,
+                    {
+                        timestamp: Date.now(),
+                        listId: MAIN_LIST_ID,
+                        refImageIds: currentRefIds,
+                        skipDiskSave: !imagePayload.base64
+                    }
+                );
+
+            } catch (err) {
+                console.error("Custom Task Failed", err);
+                renderErrorCard(taskId, err, null);
+            }
+        };
+
+    })();
 
     // Run Start
     initApp();
