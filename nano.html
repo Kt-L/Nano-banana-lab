@@ -1930,6 +1930,7 @@
             resultsData.set(taskId, record);
         }
         if ("thumbnail" in record) delete record.thumbnail;
+        if ("base64" in record) delete record.base64;
         enforceResultsCacheLimit();
         return record;
     }
@@ -3433,7 +3434,7 @@
     function getProviderConfig(provider = activeProvider) {
         const normalized = normalizeProvider(provider);
         const baseConfig = PROVIDER_CONFIGS[normalized] || PROVIDER_CONFIGS.google;
-        
+
         if (normalized === "fal") {
              if (falModel === "qwen-image") {
                  return {
@@ -5076,6 +5077,13 @@
                     previewUrl = `data:${mime};base64,${record.base64}`;
                 }
             }
+            if (!previewUrl) {
+                const fullBase64 = await fetchFullBase64(taskId);
+                if (fullBase64) {
+                    const mime = record.meta?.mimeType || "image/png";
+                    previewUrl = `data:${mime};base64,${fullBase64}`;
+                }
+            }
         } catch (err) {
              console.warn("Error resolving preview image", err);
         }
@@ -5459,6 +5467,20 @@
         if (lbCropOverlay) lbCropOverlay.style.display = "none";
         if (lbMaskCanvas) lbMaskCanvas.style.display = "none";
         // if (lbMaskTools) lbMaskTools.style.display = "none";
+        // Release large canvas buffers and image refs to avoid memory growth.
+        if (lbEditCanvas) {
+            const ctx = lbEditCanvas.getContext("2d");
+            if (ctx) ctx.clearRect(0, 0, lbEditCanvas.width, lbEditCanvas.height);
+            lbEditCanvas.width = 1;
+            lbEditCanvas.height = 1;
+        }
+        if (lbMaskCanvas) {
+            const mCtx = lbMaskCanvas.getContext("2d");
+            if (mCtx) mCtx.clearRect(0, 0, lbMaskCanvas.width, lbMaskCanvas.height);
+            lbMaskCanvas.width = 1;
+            lbMaskCanvas.height = 1;
+        }
+        lbEditState.img = null;
     }
 
     function updateEditCanvas() {
@@ -9793,7 +9815,10 @@
         const trimmed = resource.replace(/^\/+/, "");
         const normalized = normalizeProvider(provider);
         const providerConfig = PROVIDER_CONFIGS[normalized];
-        const baseUrl = providerConfig?.resourceBase || PROVIDER_CONFIGS.google.resourceBase;
+        let baseUrl = providerConfig?.resourceBase;
+        if (!baseUrl) {
+            baseUrl = "https://generativelanguage.googleapis.com";
+        }
         if (trimmed.startsWith("v1beta/")) {
             return `${baseUrl}/${trimmed}`;
         }
@@ -9872,18 +9897,11 @@
             const inferredMime = inferMimeTypeFromUrl(url);
             const isImageType = blobType.startsWith("image/");
             if (blobType && !isImageType) {
-                const isOctetStream = blobType === "application/octet-stream" || blobType === "binary/octet-stream";
-                if (!(isOctetStream && inferredMime.startsWith("image/"))) {
-                    throw new Error("Image fetch did not return an image.");
-                }
+                throw new Error("Image fetch did not return an image.");
             }
             return { base64: await blobToBase64Async(blob), mimeType: isImageType ? blobType : (inferredMime || DEFAULT_IMAGE_MIME) };
         };
-        try {
-            return await fetchWithHeaders();
-        } catch (err) {
-            throw err;
-        }
+        return fetchWithHeaders();
     }
 
     function resetImportDialogFields() {
@@ -10106,7 +10124,7 @@
         const normalized = normalizeResourceUrl(resource, provider);
         if (!normalized) return null;
         const url = ensureAltMedia(normalized);
-        const headers = apiKey ? { "x-goog-api-key": apiKey } : {};
+        const headers = { "x-goog-api-key": apiKey };
         const resp = await fetch(url, {
             headers
         });
